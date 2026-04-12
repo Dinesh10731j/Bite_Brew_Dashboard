@@ -1,0 +1,20 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/forbidden/page": "/forbidden",
+  "/page": "/",
+  "/login/page": "/login",
+  "/dashboard/page": "/dashboard",
+  "/dashboard/(newsletter)/newsletter/page": "/dashboard/newsletter",
+  "/dashboard/(analytics)/analytics/page": "/dashboard/analytics",
+  "/dashboard/(messages)/messages/page": "/dashboard/messages",
+  "/dashboard/(notifications)/notifications/page": "/dashboard/notifications",
+  "/dashboard/(orders)/orders/[id]/page": "/dashboard/orders/[id]",
+  "/dashboard/(management)/management/page": "/dashboard/management",
+  "/dashboard/(management)/management/menu/page": "/dashboard/management/menu",
+  "/dashboard/(orders)/orders/page": "/dashboard/orders",
+  "/dashboard/(reports)/reports/page": "/dashboard/reports",
+  "/dashboard/(management)/management/activity-logs/page": "/dashboard/management/activity-logs",
+  "/dashboard/(management)/management/users/page": "/dashboard/management/users",
+  "/dashboard/(management)/management/gallery/page": "/dashboard/management/gallery",
+  "/dashboard/(settings)/settings/page": "/dashboard/settings"
+}

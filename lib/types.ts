@@ -1,3 +1,21 @@
+export interface loginFormValues{
+  email: string;
+  password: string;
+}
+
+
+
+export interface loginResponse {
+  message: string;
+  isCached: boolean;
+  accessToken: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: 'admin' | 'staff' | 'manager' | 'user';
+  };
+}
 export type Metric = {
   label: string;
   value: string;
@@ -74,3 +92,25 @@ export type GalleryItem = {
   tags: string[];
   featured: boolean;
 };
+
+export interface ApiResponse<T> {
+  message: string;
+  data: T;
+}
+
+export interface JwtPayload {
+  id: string;
+  email: string;
+  role: 'admin' | 'staff' | 'manager' | 'user';
+  exp: number;
+  iat?: number;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'admin' | 'staff' | 'manager' | 'user';
+}
+
+export type CurrentUser = ApiResponse<User>;

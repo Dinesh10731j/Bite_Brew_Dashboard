@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import { ThemeProvider } from "@/components/dashboard/ThemeProvider";
+import { QueryClientWrapper } from "@/components/providers/QueryClientWrapper";
 import "./globals.css";
+
 
 export const metadata: Metadata = {
   title: "Java Brew & Bites Dashboard",
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
-      <body>
-        <ThemeProvider>{children}</ThemeProvider>
+<body suppressHydrationWarning={true}>
+        <QueryClientWrapper>{children}</QueryClientWrapper>
       </body>
     </html>
   );

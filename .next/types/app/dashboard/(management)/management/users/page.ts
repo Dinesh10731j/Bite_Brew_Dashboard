@@ -1,4 +1,4 @@
-// File: /Users/amishrsl/Documents/Dashboard/frontend/app/dashboard/(management)/management/users/page.tsx
+// File: C:\bite-brew-dashboard\Dashboard\app\dashboard\(management)\management\users\page.tsx
 import * as entry from '../../../../../../../app/dashboard/(management)/management/users/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

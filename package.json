@@ -4,17 +4,24 @@
   "private": true,
   "scripts": {
     "clean": "rm -rf .next",
-    "dev": "sh -c 'rm -rf .next .node-localstorage; NODE_OPTIONS=\"--localstorage-file=.node-localstorage\" next dev'",
-    "build": "sh -c 'rm -rf .node-localstorage; NODE_OPTIONS=\"--localstorage-file=.node-localstorage\" next build'",
+      "build": "rimraf .node-localstorage && cross-env NODE_OPTIONS=--localstorage-file=.node-localstorage next build",
+  "dev": "rimraf .next .node-localstorage && cross-env NODE_OPTIONS=--localstorage-file=.node-localstorage next dev",
     "start": "sh -c 'rm -rf .node-localstorage; NODE_OPTIONS=\"--localstorage-file=.node-localstorage\" next start'",
     "lint": "next lint"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.99.0",
+    "@tanstack/react-query-devtools": "^5.99.0",
+    "axios": "^1.15.0",
     "clsx": "^2.1.1",
+    "cross-env": "^10.1.0",
     "lucide-react": "^0.511.0",
     "next": "15.3.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-hook-form": "^7.72.1",
+    "rimraf": "^6.1.3",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.0"
   },
   "devDependencies": {
