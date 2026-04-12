@@ -25,13 +25,20 @@ function buildUrl(url: string, params?: RequestConfig["params"]) {
 }
 
 export async function apiRequest<T>(url: string, config: RequestConfig = {}) {
+  const isFormData = typeof FormData !== "undefined" && config.body instanceof FormData;
+  const body: BodyInit | undefined = config.body
+    ? isFormData
+      ? (config.body as FormData)
+      : JSON.stringify(config.body)
+    : undefined;
+
   const response = await fetch(buildUrl(url, config.params), {
     method: config.method ?? "GET",
     headers: {
-      "Content-Type": "application/json",
+      ...(!isFormData ? { "Content-Type": "application/json" } : {}),
       ...(config.token ? { Authorization: `Bearer ${config.token}` } : {})
     },
-    body: config.body ? JSON.stringify(config.body) : undefined,
+    body,
     cache: "no-store"
   });
 

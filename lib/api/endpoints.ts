@@ -5,6 +5,7 @@ export const apiEndpoints = {
   auth: {
     signup: `${base}/auth/signup`,
     signin: `${base}/auth/signin`,
+    logout: `${base}/auth/logout`,
     forgotPassword: `${base}/auth/forgot-password`,
     resetPassword: `${base}/auth/reset-password`
   },
@@ -32,10 +33,33 @@ export const apiEndpoints = {
   newsletter: {
     subscribe: `${base}/newsletter/subscribe`,
     list: `${base}/newsletter`,
+    campaign: `${base}/newsletter/campaign`,
     updateStatus: (id: string) => `${base}/newsletter/${id}/status`,
     remove: (id: string) => `${base}/newsletter/${id}`
   },
   notifications: {
-    create: `${base}/notifications`
+    create: `${base}/notifications`,
+    list: `${base}/notifications`,
+    markRead: (id: string) => `${base}/notifications/${id}/read`,
+    markReadAll: `${base}/notifications/read-all`,
+    remove: (id: string) => `${base}/notifications/${id}`
+  },
+  gallery: {
+    list: `${base}/gallery`,
+    create: `${base}/gallery`,
+    detail: (id: string) => `${base}/gallery/${id}`,
+    remove: (id: string) => `${base}/gallery/${id}`
+  },
+  uploads: {
+    image: `${base}/uploads/image`
+  },
+  dashboard: {
+    overview: `${base}/dashboard/overview`
+  },
+  analytics: {
+    summary: `${base}/analytics/summary`
+  },
+  reports: {
+    sales: `${base}/reports/sales`
   }
 };

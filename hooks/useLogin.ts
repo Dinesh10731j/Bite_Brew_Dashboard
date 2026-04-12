@@ -2,9 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import axiosInstance from "@/lib/api/axios";
-import { apiEndpoints } from "@/lib/api/axios";
-const { auth } = apiEndpoints;
+import { dashboardApi } from "@/lib/api/dashboard";
 import type { loginFormValues, loginResponse } from "@/lib/types";
 import { extractAccessToken, setAccessToken } from "@/lib/auth";
  import { toast } from "sonner";
@@ -12,9 +10,9 @@ import { extractAccessToken, setAccessToken } from "@/lib/auth";
 const loginApi = async (data: loginFormValues): Promise<loginResponse> => {
  
   try {
-    const response = await axiosInstance.post<loginResponse>(auth.signin, data);
-    console.log('Login response:', response.data);
-    return response.data;
+    const response = await dashboardApi.signin(data);
+    console.log('Login response:', response);
+    return response as loginResponse;
   } catch (error) {
     console.error('Login error:', error);
     if (error instanceof Error) {
@@ -50,5 +48,4 @@ export const UseUserLogin = () => {
     },
   });
 };
-
 

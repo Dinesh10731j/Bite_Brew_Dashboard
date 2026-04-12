@@ -1,7 +1,8 @@
 "use client";
 
 import { useQuery } from '@tanstack/react-query';
-import axiosInstance from '@/lib/api/axios';
+import { dashboardApi } from '@/lib/api/dashboard';
+import { getAccessToken } from '@/lib/auth';
 import type { CurrentUser, User } from '@/lib/types';
 const ALLOWED_ROLES: User['role'][] = ['admin', 'staff', 'manager'];
 
@@ -9,8 +10,11 @@ export function useCurrentUser() {
   const query = useQuery({
     queryKey: ['currentUser'],
     queryFn: async (): Promise<CurrentUser> => {
-      const response = await axiosInstance.get('/bite-brew/users/me');
-      return response.data;
+      const token = getAccessToken();
+      if (!token) {
+        throw new Error("Missing access token");
+      }
+      return dashboardApi.getCurrentUser(token) as Promise<CurrentUser>;
     },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 min
