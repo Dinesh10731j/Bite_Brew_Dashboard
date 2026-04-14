@@ -1,52 +1,53 @@
-type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
+import axiosInstance from './axios';
+import { clearAccessToken, getAccessToken } from '@/lib/auth';
 
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    if (typeof window !== "undefined" && error.response?.status === 401) {
+      clearAccessToken();
+      window.location.href = '/login?reason=unauthorized';
+    }
+    if (typeof window !== "undefined" && error.response?.status === 403) {
+      window.location.href = '/login?reason=forbidden';
+    }
+    return Promise.reject(error.response?.data || { message: error.message });
+  }
+);
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (config.data instanceof FormData && config.headers) {
+    delete config.headers['Content-Type'];
+  }
+  return config;
+});
+
+type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 type RequestConfig = {
   method?: HttpMethod;
   body?: unknown;
-  token?: string;
   params?: Record<string, string | number | boolean | undefined>;
+  token?: string;
 };
 
-function buildUrl(url: string, params?: RequestConfig["params"]) {
-  if (!params) {
-    return url;
+export async function apiRequest<T = any>(url: string, config: RequestConfig = {}) {
+  try {
+    const response = await axiosInstance({
+      url,
+      method: config.method ?? 'GET' as any,
+      data: config.body,
+      params: config.params,
+      headers: config.token ? { Authorization: `Bearer ${config.token}` } : undefined,
+    });
+    return response.data as T;
+  } catch (error: any) {
+    throw new Error(error?.message ?? 'Request failed');
   }
-
-  const searchParams = new URLSearchParams();
-
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== "") {
-      searchParams.set(key, String(value));
-    }
-  });
-
-  const query = searchParams.toString();
-  return query ? `${url}?${query}` : url;
 }
 
-export async function apiRequest<T>(url: string, config: RequestConfig = {}) {
-  const isFormData = typeof FormData !== "undefined" && config.body instanceof FormData;
-  const body: BodyInit | undefined = config.body
-    ? isFormData
-      ? (config.body as FormData)
-      : JSON.stringify(config.body)
-    : undefined;
-
-  const response = await fetch(buildUrl(url, config.params), {
-    method: config.method ?? "GET",
-    headers: {
-      ...(!isFormData ? { "Content-Type": "application/json" } : {}),
-      ...(config.token ? { Authorization: `Bearer ${config.token}` } : {})
-    },
-    body,
-    cache: "no-store"
-  });
-
-  const payload = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    throw new Error(payload.message ?? "Request failed");
-  }
-
-  return payload as T;
-}

@@ -1,16 +1,16 @@
-import axios, { AxiosInstance} from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { apiEndpoints } from './endpoints';
 
-const BASE_URL = 'http://localhost:7000/api/v1';
+const BASE_URL = 'http://localhost:7000/api/v1/bite-brew';
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,
-  withCredentials: true, // For httpOnly cookies
+  withCredentials: true,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 export default axiosInstance;
-
 export { apiEndpoints };

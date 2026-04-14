@@ -1,14 +1,28 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Coffee, ArrowRight, Lock, Mail, Loader2 } from "lucide-react";
 import { loginFormValues } from "@/lib/types";
 import { UseUserLogin } from "@/hooks/useLogin";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const loginMutation = UseUserLogin();
   const { isError, isPending, mutate } = loginMutation;
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const reason = searchParams.get("reason");
+    if (reason === "forbidden") {
+      toast.error("Forbidden: your role cannot access the dashboard.");
+    }
+    if (reason === "unauthorized") {
+      toast.error("Please sign in to continue.");
+    }
+  }, [searchParams]);
   
   const {
     register,

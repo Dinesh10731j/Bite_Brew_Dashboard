@@ -2,17 +2,14 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { dashboardApi } from "@/lib/api/dashboard";
 import type { loginFormValues, loginResponse } from "@/lib/types";
-import { extractAccessToken, setAccessToken } from "@/lib/auth";
- import { toast } from "sonner";
+import { cacheAccessToken, canAccessDashboard, decodeJwt, getJwtFromLogin } from "@/lib/auth";
+import { toast } from "sonner";
+import { dashboardApi } from "@/lib/api/dashboard";
 
 const loginApi = async (data: loginFormValues): Promise<loginResponse> => {
- 
   try {
-    const response = await dashboardApi.signin(data);
-    console.log('Login response:', response);
-    return response as loginResponse;
+    return await dashboardApi.signin(data) as loginResponse;
   } catch (error) {
     console.error('Login error:', error);
     if (error instanceof Error) {
@@ -30,17 +27,28 @@ export const UseUserLogin = () => {
     mutationKey: ["login"],
     mutationFn: loginApi,
     onSuccess: (data) => {
-      const token = extractAccessToken(data);
+      const token = getJwtFromLogin(data);
+      const role = decodeJwt(token)?.role ?? data.user?.role ?? null;
+
       if (token) {
-        setAccessToken(token);
-        // Invalidate user query to refetch /users/me for role check + redirect to dashboard
-        // Middleware will protect if wrong role
-        queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-        toast.success("Login successful! Welcome back.");
-        router.push('/dashboard');
-      } else {
-        console.error('Invalid login response - no token');
+        cacheAccessToken(token);
       }
+
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+
+      if (!role) {
+        router.replace("/dashboard");
+        return;
+      }
+
+      if (!canAccessDashboard(role)) {
+        toast.error("Forbidden: your role cannot access the dashboard.");
+        router.replace("/login?reason=forbidden");
+        return;
+      }
+
+      toast.success("Login successful.");
+      router.replace('/dashboard');
     },
     onError: (error) => {
       console.error(error.message || 'Login failed');

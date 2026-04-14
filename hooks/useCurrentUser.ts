@@ -2,9 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/lib/api/dashboard';
-import { getAccessToken } from '@/lib/auth';
-import type { CurrentUser, User } from '@/lib/types';
-const ALLOWED_ROLES: User['role'][] = ['admin', 'staff', 'manager'];
+import { canAccessDashboard, getAccessToken } from '@/lib/auth';
+import type { CurrentUser } from '@/lib/types';
 
 export function useCurrentUser() {
   const query = useQuery({
@@ -20,7 +19,7 @@ export function useCurrentUser() {
     staleTime: 5 * 60 * 1000, // 5 min
   });
 
-  const isAllowed = query.data?.data.role ? ALLOWED_ROLES.includes(query.data.data.role) : false;
+  const isAllowed = canAccessDashboard(query.data?.data.role ?? null);
 
   return {
     ...query,

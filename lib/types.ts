@@ -1,3 +1,5 @@
+export type UserRole = "admin" | "staff" | "manager" | "user";
+
 export interface loginFormValues{
   email: string;
   password: string;
@@ -7,13 +9,22 @@ export interface loginFormValues{
 
 export interface loginResponse {
   message: string;
-  isCached: boolean;
-  accessToken: string;
+  isCached?: boolean;
+  accessToken?: string;
+  token?: string;
+  data?: {
+    accessToken?: string;
+    token?: string;
+    user?: User;
+    tokens?: {
+      accessToken?: string;
+    };
+  };
   user: {
     id: string;
     name: string;
     email: string;
-    role: 'admin' | 'staff' | 'manager' | 'user';
+    role: UserRole;
   };
 }
 export type Metric = {
@@ -101,7 +112,7 @@ export interface ApiResponse<T> {
 export interface JwtPayload {
   id: string;
   email: string;
-  role: 'admin' | 'staff' | 'manager' | 'user';
+  role: UserRole;
   exp: number;
   iat?: number;
 }
@@ -110,7 +121,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'staff' | 'manager' | 'user';
+  role: UserRole;
 }
 
 export type CurrentUser = ApiResponse<User>;

@@ -31,8 +31,6 @@ function normalizeNotification(item: any): NotificationRow {
 }
 
 export function NotificationsApiWorkspace() {
-  const token = getAccessToken();
-
   const resource = useBackendResource<NotificationRow[]>(
     fallbackNotifications.map((item) => ({
       id: item.id,
@@ -44,21 +42,20 @@ export function NotificationsApiWorkspace() {
       actionLink: item.actionLink
     })),
     async () => {
-      if (!token) {
-        return fallbackNotifications.map((item) => ({
-          id: item.id,
-          type: item.type,
-          content: item.content,
-          timestamp: item.timestamp,
-          isRead: item.isRead,
-          priority: item.priority,
-          actionLink: item.actionLink
-        }));
-      }
-
+      const token = getAccessToken();
       const response: any = await dashboardApi.getNotifications(token, { page: 1, limit: 20 });
       const items = response?.data ?? [];
-      return Array.isArray(items) ? items.map(normalizeNotification) : [];
+      return Array.isArray(items)
+        ? items.map(normalizeNotification)
+        : fallbackNotifications.map((item) => ({
+            id: item.id,
+            type: item.type,
+            content: item.content,
+            timestamp: item.timestamp,
+            isRead: item.isRead,
+            priority: item.priority,
+            actionLink: item.actionLink
+          }));
     }
   );
 

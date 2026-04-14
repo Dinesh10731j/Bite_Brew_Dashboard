@@ -14,12 +14,8 @@ const fallbackUsers = [
 ];
 
 export function UsersApiWorkspace() {
-  const token = getAccessToken();
   const resource = useBackendResource<string[][]>(fallbackUsers, async () => {
-    if (!token) {
-      return fallbackUsers;
-    }
-
+    const token = getAccessToken();
     const response: any = await dashboardApi.getUsers(token, { page: 1, limit: 20 });
     const items = response?.data ?? [];
     return Array.isArray(items)

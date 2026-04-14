@@ -1,49 +1,45 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { decodeJwt } from '@/lib/auth';
+import { canAccessDashboard, decodeJwt, TOKEN_COOKIE } from '@/lib/auth';
 
-
-const TOKEN_COOKIE = "access_token" as const;
 export function middleware(request: NextRequest) {
   const token = request.cookies.get(TOKEN_COOKIE)?.value;
   const { pathname } = request.nextUrl;
 
   const isLogin = pathname === '/login';
   const isDashboard = pathname.startsWith('/dashboard');
-  const isForbidden = pathname === '/forbidden';
+  const isDashboardApi = pathname.startsWith('/dashboard/api/');
 
-  // Allow forbidden page
-  if (isForbidden) return NextResponse.next();
+  // API routes should return JSON status from handlers, not redirects from middleware.
+  if (isDashboardApi) {
+    return NextResponse.next();
+  }
 
-  // No token
   if (!token) {
     if (isDashboard) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      return NextResponse.redirect(new URL('/login?reason=unauthorized', request.url));
     }
     return NextResponse.next();
   }
 
-  // Decode JWT (client-safe, no verify)
   const payload = decodeJwt(token);
   const role = payload?.role;
 
-  // Invalid/expired token
   if (!payload || !role) {
     if (isLogin) return NextResponse.next();
     if (isDashboard) {
-      const response = NextResponse.redirect(new URL('/login', request.url));
+      const response = NextResponse.redirect(new URL('/login?reason=unauthorized', request.url));
       response.cookies.delete(TOKEN_COOKIE);
       return response;
     }
     return NextResponse.next();
   }
 
-  // Role-based access - safe type guard
-  const isAllowed = role && (role === 'admin' || role === 'manager' || role === 'staff');
+  const isAllowed = canAccessDashboard(role);
 
   if (isDashboard) {
     if (!isAllowed) {
-      return NextResponse.rewrite(new URL('/forbidden', request.url));
+      return NextResponse.redirect(new URL('/login?reason=forbidden', request.url));
     }
     return NextResponse.next();
   }
@@ -57,8 +53,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/login',
-    '/forbidden',
     '/dashboard/:path*',
+    '/login',
   ],
 };

@@ -25,12 +25,8 @@ function normalizeMessage(item: any) {
 }
 
 export function MessagesApiWorkspace() {
-  const token = getAccessToken();
   const resource = useBackendResource(fallbackMessages, async () => {
-    if (!token) {
-      return fallbackMessages;
-    }
-
+    const token = getAccessToken();
     const response: any = await dashboardApi.getMessages(token, { page: 1, limit: 20 });
     const items = response?.data ?? [];
     return Array.isArray(items) ? items.map(normalizeMessage) : fallbackMessages;

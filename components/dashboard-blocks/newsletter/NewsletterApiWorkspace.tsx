@@ -19,12 +19,8 @@ const fallbackSubscribers: SubscriberRow[] = [
 ];
 
 export function NewsletterApiWorkspace() {
-  const token = getAccessToken();
   const resource = useBackendResource<SubscriberRow[]>(fallbackSubscribers, async () => {
-    if (!token) {
-      return fallbackSubscribers;
-    }
-
+    const token = getAccessToken();
     const response: any = await dashboardApi.getNewsletterSubscribers(token, { page: 1, limit: 20 });
     const items = response?.data ?? [];
     return Array.isArray(items)

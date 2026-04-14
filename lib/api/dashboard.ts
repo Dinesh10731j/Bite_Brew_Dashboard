@@ -1,9 +1,10 @@
 import { apiRequest } from "@/lib/api/client";
 import { apiEndpoints } from "@/lib/api/endpoints";
+import { getAccessToken } from "@/lib/auth";
 
 type QueryParams = Record<string, string | number | boolean | undefined>;
 
-type UserRole = "admin" | "user" | "manager";
+type UserRole = "admin" | "user" | "manager" | "staff";
 
 type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
 
@@ -26,6 +27,57 @@ type NewsletterCampaignBody = {
   sendToRegisteredUsers?: boolean;
 };
 
+type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
+type ProtectedRequestConfig = {
+  method?: HttpMethod;
+  body?: unknown;
+  params?: QueryParams;
+  token?: string;
+};
+
+const protectedBase = "/dashboard/api/protected";
+
+function buildQuery(params?: QueryParams) {
+  if (!params) return "";
+  const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null);
+  if (!entries.length) return "";
+  const search = new URLSearchParams();
+  entries.forEach(([key, value]) => search.set(key, String(value)));
+  return `?${search.toString()}`;
+}
+
+async function protectedRequest<T = any>(path: string, config: ProtectedRequestConfig = {}) {
+  const method = config.method ?? "GET";
+  const token = config.token || getAccessToken();
+  const headers: Record<string, string> = {};
+  let body: BodyInit | undefined;
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  if (config.body instanceof FormData) {
+    body = config.body;
+  } else if (config.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(config.body);
+  }
+
+  const response = await fetch(`${protectedBase}${path}${buildQuery(config.params)}`, {
+    method,
+    credentials: "same-origin",
+    cache: "no-store",
+    headers,
+    body: method === "GET" ? undefined : body,
+  });
+
+  const payload = await response.json().catch(() => ({ message: "Request failed" }));
+  if (!response.ok) {
+    throw new Error(payload?.message ?? "Request failed");
+  }
+  return payload as T;
+}
+
 export const dashboardApi = {
   health: () => apiRequest(apiEndpoints.health),
 
@@ -39,18 +91,18 @@ export const dashboardApi = {
   resetPassword: (body: { email: string; token: string; password: string; confirmPassword: string }) =>
     apiRequest(apiEndpoints.auth.resetPassword, { method: "POST", body }),
 
-  getUsers: (token: string, params?: QueryParams) => apiRequest(apiEndpoints.users.list, { token, params }),
-  getCurrentUser: (token: string) => apiRequest(apiEndpoints.users.me, { token }),
+  getUsers: (token: string, params?: QueryParams) => protectedRequest("/users", { token, params }),
+  getCurrentUser: (token: string) => protectedRequest("/users/me", { token }),
   updateUserRole: (id: string, token: string, role: UserRole) =>
-    apiRequest(apiEndpoints.users.updateRole(id), { method: "PATCH", token, body: { role } }),
+    protectedRequest(`/users/${id}/role`, { method: "PATCH", token, body: { role } }),
 
   getMenuCategories: (params?: QueryParams) => apiRequest(apiEndpoints.menu.categories, { params }),
   createMenuCategory: (token: string, body: { name: string; description?: string; isActive?: boolean }) =>
-    apiRequest(apiEndpoints.menu.categories, { method: "POST", token, body }),
+    protectedRequest("/menu/categories", { method: "POST", token, body }),
   updateMenuCategory: (id: string, token: string, body: { name?: string; description?: string; isActive?: boolean }) =>
-    apiRequest(apiEndpoints.menu.category(id), { method: "PATCH", token, body }),
+    protectedRequest(`/menu/categories/${id}`, { method: "PATCH", token, body }),
   deleteMenuCategory: (id: string, token: string) =>
-    apiRequest(apiEndpoints.menu.category(id), { method: "DELETE", token }),
+    protectedRequest(`/menu/categories/${id}`, { method: "DELETE", token }),
 
   getMenuItems: (params?: QueryParams) => apiRequest(apiEndpoints.menu.items, { params }),
   createMenuItem: (
@@ -65,19 +117,19 @@ export const dashboardApi = {
       featured?: boolean;
       discount?: number;
     }
-  ) => apiRequest(apiEndpoints.menu.items, { method: "POST", token, body }),
+  ) => protectedRequest("/menu/items", { method: "POST", token, body }),
   createMenuItemMultipart: (token: string, formData: FormData) =>
-    apiRequest(apiEndpoints.menu.items, { method: "POST", token, body: formData }),
+    protectedRequest("/menu/items", { method: "POST", token, body: formData }),
   updateMenuItem: (id: string, token: string, body: Record<string, unknown>) =>
-    apiRequest(apiEndpoints.menu.item(id), { method: "PATCH", token, body }),
-  deleteMenuItem: (id: string, token: string) => apiRequest(apiEndpoints.menu.item(id), { method: "DELETE", token }),
+    protectedRequest(`/menu/items/${id}`, { method: "PATCH", token, body }),
+  deleteMenuItem: (id: string, token: string) => protectedRequest(`/menu/items/${id}`, { method: "DELETE", token }),
 
   createOrder: (body: Record<string, unknown>, token?: string) =>
     apiRequest(apiEndpoints.orders.list, { method: "POST", token, body }),
-  getOrders: (token: string, params?: QueryParams) => apiRequest(apiEndpoints.orders.list, { token, params }),
-  getOrderById: (id: string, token: string) => apiRequest(apiEndpoints.orders.detail(id), { token }),
+  getOrders: (token: string, params?: QueryParams) => protectedRequest("/orders", { token, params }),
+  getOrderById: (id: string, token: string) => protectedRequest(`/orders/${id}`, { token }),
   updateOrderStatus: (id: string, token: string, status: OrderStatus) =>
-    apiRequest(apiEndpoints.orders.updateStatus(id), { method: "PATCH", token, body: { status } }),
+    protectedRequest(`/orders/${id}/status`, { method: "PATCH", token, body: { status } }),
 
   createMessage: (body: {
     senderName: string;
@@ -86,21 +138,21 @@ export const dashboardApi = {
     email?: string;
     source?: string;
   }) => apiRequest(apiEndpoints.messages.list, { method: "POST", body }),
-  getMessages: (token: string, params?: QueryParams) => apiRequest(apiEndpoints.messages.list, { token, params }),
+  getMessages: (token: string, params?: QueryParams) => protectedRequest("/messages", { token, params }),
   markMessageRead: (id: string, token: string, isRead = true) =>
-    apiRequest(apiEndpoints.messages.markRead(id), { method: "PATCH", token, body: { isRead } }),
-  deleteMessage: (id: string, token: string) => apiRequest(apiEndpoints.messages.remove(id), { method: "DELETE", token }),
+    protectedRequest(`/messages/${id}/read`, { method: "PATCH", token, body: { isRead } }),
+  deleteMessage: (id: string, token: string) => protectedRequest(`/messages/${id}`, { method: "DELETE", token }),
 
   subscribeNewsletter: (email: string) =>
     apiRequest(apiEndpoints.newsletter.subscribe, { method: "POST", body: { email } }),
   getNewsletterSubscribers: (token: string, params?: QueryParams) =>
-    apiRequest(apiEndpoints.newsletter.list, { token, params }),
+    protectedRequest("/newsletter", { token, params }),
   sendNewsletterCampaign: (token: string, body: NewsletterCampaignBody) =>
-    apiRequest(apiEndpoints.newsletter.campaign, { method: "POST", token, body }),
+    protectedRequest("/newsletter/campaign", { method: "POST", token, body }),
   updateNewsletterStatus: (id: string, token: string, status: string) =>
-    apiRequest(apiEndpoints.newsletter.updateStatus(id), { method: "PATCH", token, body: { status } }),
+    protectedRequest(`/newsletter/${id}/status`, { method: "PATCH", token, body: { status } }),
   deleteNewsletterSubscriber: (id: string, token: string) =>
-    apiRequest(apiEndpoints.newsletter.remove(id), { method: "DELETE", token }),
+    protectedRequest(`/newsletter/${id}`, { method: "DELETE", token }),
 
   createNotification: (
     token: string,
@@ -111,19 +163,19 @@ export const dashboardApi = {
       actionLink?: string;
       userId?: string;
     }
-  ) => apiRequest(apiEndpoints.notifications.create, { method: "POST", token, body }),
+  ) => protectedRequest("/notifications", { method: "POST", token, body }),
   getNotifications: (token: string, params?: QueryParams) =>
-    apiRequest(apiEndpoints.notifications.list, { token, params }),
+    protectedRequest("/notifications", { token, params }),
   markNotificationRead: (id: string, token: string, isRead = true) =>
-    apiRequest(apiEndpoints.notifications.markRead(id), { method: "PATCH", token, body: { isRead } }),
+    protectedRequest(`/notifications/${id}/read`, { method: "PATCH", token, body: { isRead } }),
   markAllNotificationsRead: (token: string, userId?: string) =>
-    apiRequest(apiEndpoints.notifications.markReadAll, {
+    protectedRequest("/notifications/read-all", {
       method: "PATCH",
       token,
       body: userId ? { userId } : {}
     }),
   deleteNotification: (id: string, token: string) =>
-    apiRequest(apiEndpoints.notifications.remove(id), { method: "DELETE", token }),
+    protectedRequest(`/notifications/${id}`, { method: "DELETE", token }),
 
   getGallery: (params?: QueryParams) => apiRequest(apiEndpoints.gallery.list, { params }),
   createGalleryJson: (
@@ -135,12 +187,12 @@ export const dashboardApi = {
       featured?: boolean;
       orderIndex?: number;
     }
-  ) => apiRequest(apiEndpoints.gallery.create, { method: "POST", token, body }),
+  ) => protectedRequest("/gallery", { method: "POST", token, body }),
   createGalleryMultipart: (token: string, formData: FormData) =>
-    apiRequest(apiEndpoints.gallery.create, { method: "POST", token, body: formData }),
+    protectedRequest("/gallery", { method: "POST", token, body: formData }),
   updateGallery: (id: string, token: string, body: Record<string, unknown>) =>
-    apiRequest(apiEndpoints.gallery.detail(id), { method: "PATCH", token, body }),
-  deleteGallery: (id: string, token: string) => apiRequest(apiEndpoints.gallery.remove(id), { method: "DELETE", token }),
+    protectedRequest(`/gallery/${id}`, { method: "PATCH", token, body }),
+  deleteGallery: (id: string, token: string) => protectedRequest(`/gallery/${id}`, { method: "DELETE", token }),
 
   uploadImage: (token: string, image: File, folder?: string) => {
     const formData = new FormData();
@@ -148,13 +200,13 @@ export const dashboardApi = {
     if (folder) {
       formData.append("folder", folder);
     }
-    return apiRequest(apiEndpoints.uploads.image, { method: "POST", token, body: formData });
+    return protectedRequest("/uploads/image", { method: "POST", token, body: formData });
   },
 
   getDashboardOverview: (token: string, params?: { limit?: number }) =>
-    apiRequest(apiEndpoints.dashboard.overview, { token, params }),
+    protectedRequest("/dashboard/overview", { token, params }),
   getAnalyticsSummary: (token: string, params?: { days?: number }) =>
-    apiRequest(apiEndpoints.analytics.summary, { token, params }),
+    protectedRequest("/analytics/summary", { token, params }),
   getSalesReport: (token: string, params?: { from?: string; to?: string }) =>
-    apiRequest(apiEndpoints.reports.sales, { token, params })
+    protectedRequest("/reports/sales", { token, params })
 };

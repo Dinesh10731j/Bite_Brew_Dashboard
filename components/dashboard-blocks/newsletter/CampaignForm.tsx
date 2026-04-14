@@ -16,11 +16,6 @@ export function CampaignForm() {
 
   const handleSend = async () => {
     const token = getAccessToken();
-    if (!token) {
-      toast.error("Please sign in first.");
-      return;
-    }
-
     if (!subject.trim() || !headline.trim()) {
       toast.error("Subject and headline are required.");
       return;

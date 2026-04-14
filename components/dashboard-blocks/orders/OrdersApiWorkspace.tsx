@@ -7,7 +7,6 @@ import { menuItems as fallbackMenuItems, orders as fallbackOrders } from "@/lib/
 import type { Order } from "@/lib/types";
 import { useBackendResource } from "@/hooks/useBackendResource";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
-import { AddOrderForm } from "./AddOrderForm";
 import { OrderFilters } from "./OrderFilters";
 import { OrdersTable } from "./OrdersTable";
 
@@ -59,13 +58,8 @@ function normalizeMenuItem(item: any): OrderCatalogItem {
 }
 
 export function OrdersApiWorkspace() {
-  const token = getAccessToken();
-
   const ordersResource = useBackendResource<Order[]>(fallbackOrders, async () => {
-    if (!token) {
-      return fallbackOrders;
-    }
-
+    const token = getAccessToken();
     const response: any = await dashboardApi.getOrders(token, { page: 1, limit: 20 });
     const items = response?.data ?? [];
     return Array.isArray(items) ? items.map(normalizeOrder) : fallbackOrders;
@@ -87,34 +81,7 @@ export function OrdersApiWorkspace() {
   return (
     <div className="space-y-6">
       <ResourceNote error={ordersResource.error} loading={ordersResource.loading} fallbackLabel="orders" />
-      <AddOrderForm
-        catalog={catalog}
-        onAdd={async (order) => {
-          if (token) {
-            const selected = catalog.find((item) => item.name === order.itemsOrdered);
-
-            if (selected) {
-              await dashboardApi.createOrder(
-                {
-                  customerName: order.customerName,
-                  phone: order.phone !== "-" ? order.phone : undefined,
-                  email: order.email !== "-" ? order.email : undefined,
-                  items: [{ menuItemId: selected.id, quantity: order.quantity }],
-                  tableNumber: order.tableNumber,
-                  deliveryAddress: order.deliveryAddress,
-                  orderType: order.orderType,
-                  paymentMethod: order.paymentMethod
-                },
-                token
-              );
-              await ordersResource.refresh();
-              return;
-            }
-          }
-
-          ordersResource.setData((current) => [order, ...current]);
-        }}
-      />
+      
       <OrderFilters />
       <OrdersTable data={ordersResource.data} />
     </div>

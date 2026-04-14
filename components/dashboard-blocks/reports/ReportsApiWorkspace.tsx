@@ -27,13 +27,8 @@ const fallbackReport: SalesReportView = {
 };
 
 export function ReportsApiWorkspace() {
-  const token = getAccessToken();
-
   const resource = useBackendResource<SalesReportView>(fallbackReport, async () => {
-    if (!token) {
-      return fallbackReport;
-    }
-
+    const token = getAccessToken();
     const response: any = await dashboardApi.getSalesReport(token);
     const data = response?.data ?? {};
 
