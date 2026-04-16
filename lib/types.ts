@@ -5,8 +5,6 @@ export interface loginFormValues{
   password: string;
 }
 
-
-
 export interface loginResponse {
   message: string;
   isCached?: boolean;
@@ -27,11 +25,12 @@ export interface loginResponse {
     role: UserRole;
   };
 }
+
 export type Metric = {
   label: string;
   value: string;
   delta: string;
-  trend: "up" | "down";
+  trend?: "up" | "down";
 };
 
 export type TrafficPoint = {
@@ -43,6 +42,7 @@ export type TrafficPoint = {
 
 export type Order = {
   id: string;
+  backendId?: string;
   customerName: string;
   phone: string;
   email: string;
@@ -52,7 +52,7 @@ export type Order = {
   orderType: "dine-in" | "takeaway" | "delivery";
   paymentMethod: "cash" | "eSewa" | "Khalti";
   paymentStatus: "paid" | "pending";
-  orderStatus: "pending" | "confirmed" | "preparing" | "completed";
+  orderStatus: "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
   tableNumber?: string;
   deliveryAddress?: string;
   createdTime: string;
@@ -61,6 +61,7 @@ export type Order = {
 
 export type Message = {
   id: string;
+  backendId?: string;
   senderName: string;
   phone: string;
   email: string;

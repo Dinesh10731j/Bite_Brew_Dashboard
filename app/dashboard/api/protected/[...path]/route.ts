@@ -5,9 +5,9 @@ import { TOKEN_COOKIE } from "@/lib/auth";
 const BACKEND_BASE_URL = "http://localhost:7000/api/v1/bite-brew";
 
 type RouteContext = {
-  params?: {
+  params: Promise<{
     path?: string[];
-  };
+  }>;
 };
 
 function normalizeToken(value?: string | null): string {
@@ -57,8 +57,9 @@ function extractTokens(request: Request, cookieStore: Awaited<ReturnType<typeof 
   };
 }
 
-function buildBackendUrl(request: Request, context: RouteContext): URL {
-  const segments = Array.isArray(context.params?.path) ? context.params.path : [];
+async function buildBackendUrl(request: Request, context: RouteContext): Promise<URL> {
+  const params = await context.params;
+  const segments = Array.isArray(params?.path) ? params.path : [];
   const encodedPath = segments.map((segment) => encodeURIComponent(segment)).join("/");
   const backendUrl = new URL(`${BACKEND_BASE_URL}/${encodedPath}`);
   const incomingUrl = new URL(request.url);
@@ -70,7 +71,7 @@ async function handleProxy(request: Request, context: RouteContext) {
   const cookieStore = await cookies();
   const { bearerToken, accessCookieToken, refreshCookieToken } = extractTokens(request, cookieStore);
 
-  const backendUrl = buildBackendUrl(request, context);
+  const backendUrl = await buildBackendUrl(request, context);
   const requestCookieHeader = request.headers.get("cookie") ?? "";
   const cookieHeader = buildForwardCookieHeader(requestCookieHeader, accessCookieToken, refreshCookieToken);
   const requestContentType = request.headers.get("content-type");
@@ -119,6 +120,10 @@ export async function POST(request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  return handleProxy(request, context);
+}
+
+export async function PUT(request: Request, context: RouteContext) {
   return handleProxy(request, context);
 }
 

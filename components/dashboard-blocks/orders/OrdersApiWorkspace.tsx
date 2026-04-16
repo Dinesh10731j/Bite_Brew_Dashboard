@@ -1,12 +1,17 @@
 "use client";
 
-import { useMemo } from "react";
-import { dashboardApi } from "@/lib/api/dashboard";
-import { getAccessToken } from "@/lib/auth";
-import { menuItems as fallbackMenuItems, orders as fallbackOrders } from "@/lib/mock-data";
-import type { Order } from "@/lib/types";
-import { useBackendResource } from "@/hooks/useBackendResource";
+import { useMemo, useState } from "react";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
+import { useBackendResource } from "@/hooks/useBackendResource";
+import { useOrders } from "@/hooks/useOrders";
+import { dashboardApi } from "@/lib/api/dashboard";
+import { findArrayData } from "@/lib/dashboard-normalizers";
+import { menuItems as fallbackMenuItems } from "@/lib/mock-data";
+import { Modal } from "@/components/shared/ui/Modal";
+import { Input } from "@/components/shared/ui/Input";
+import { Button } from "@/components/shared/ui/Button";
+import type { Order } from "@/lib/types";
+import { AddOrderForm, type CreateOrderPayload } from "./AddOrderForm";
 import { OrderFilters } from "./OrderFilters";
 import { OrdersTable } from "./OrdersTable";
 
@@ -16,74 +21,131 @@ type OrderCatalogItem = {
   price: number;
 };
 
-function normalizeOrder(item: any): Order {
-  const status = item?.status ?? item?.orderStatus ?? "pending";
-  const paymentMethod = item?.paymentMethod ?? "cash";
-  const totalPrice =
-    Number(item?.totalPrice ?? item?.total ?? item?.amount ?? 0) ||
-    (Array.isArray(item?.items) ? item.items.reduce((sum: number, part: any) => sum + Number(part?.price ?? 0) * Number(part?.quantity ?? 1), 0) : 0);
-
-  return {
-    id: item?.orderNumber ?? item?.id ?? item?._id ?? "JBB-0000",
-    customerName: item?.customerName ?? "Customer",
-    phone: item?.phone ?? "-",
-    email: item?.email ?? "-",
-    itemsOrdered:
-      item?.itemsOrdered ??
-      (Array.isArray(item?.items) ? item.items.map((part: any) => part?.menuItem?.name ?? part?.name ?? "Item").join(", ") : "Order item"),
-    quantity: Number(item?.quantity ?? (Array.isArray(item?.items) ? item.items.reduce((sum: number, part: any) => sum + Number(part?.quantity ?? 1), 0) : 1)),
-    totalPrice,
-    orderType: item?.orderType ?? "takeaway",
-    paymentMethod,
-    paymentStatus: item?.paymentStatus ?? (paymentMethod === "cash" ? "pending" : "paid"),
-    orderStatus: status === "ready" || status === "cancelled" ? "confirmed" : status,
-    tableNumber: item?.tableNumber,
-    deliveryAddress: item?.deliveryAddress,
-    createdTime: item?.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-",
-    timeline: [
-      { label: "Pending", time: item?.createdAt ? "Created" : "--", active: true },
-      { label: "Confirmed", time: status === "confirmed" || status === "preparing" || status === "completed" ? "Updated" : "--", active: ["confirmed", "preparing", "completed"].includes(status) },
-      { label: "Preparing", time: status === "preparing" || status === "completed" ? "Kitchen" : "--", active: ["preparing", "completed"].includes(status) },
-      { label: "Completed", time: status === "completed" ? "Done" : "--", active: status === "completed" }
-    ]
-  };
-}
-
 function normalizeMenuItem(item: any): OrderCatalogItem {
   return {
     id: item?.id ?? item?._id ?? item?.name,
     name: item?.name ?? "Menu item",
-    price: Number(item?.price ?? 0)
+    price: Number(item?.price ?? 0),
   };
 }
 
 export function OrdersApiWorkspace() {
-  const ordersResource = useBackendResource<Order[]>(fallbackOrders, async () => {
-    const token = getAccessToken();
-    const response: any = await dashboardApi.getOrders(token, { page: 1, limit: 20 });
-    const items = response?.data ?? [];
-    return Array.isArray(items) ? items.map(normalizeOrder) : fallbackOrders;
-  });
+  const [statusFilter, setStatusFilter] = useState<"all" | Order["orderStatus"]>("all");
+  const [editOrder, setEditOrder] = useState<Order | null>(null);
+  const [deleteOrder, setDeleteOrder] = useState<Order | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editEmail, setEditEmail] = useState("");
 
-  const menuResource = useBackendResource<OrderCatalogItem[]>(
-    fallbackMenuItems.map((item) => ({ id: item.id, name: item.name, price: item.price })),
-    async () => {
+  const orders = useOrders();
+
+  const menuResource = useBackendResource<OrderCatalogItem[]>({
+    fallback: fallbackMenuItems.map((item) => ({ id: item.id, name: item.name, price: item.price })),
+    loader: async () => {
       const response: any = await dashboardApi.getMenuItems({ page: 1, limit: 50 });
-      const items = response?.data ?? [];
-      return Array.isArray(items)
+      const items = findArrayData(response);
+      return items
         ? items.map(normalizeMenuItem)
         : fallbackMenuItems.map((item) => ({ id: item.id, name: item.name, price: item.price }));
-    }
-  );
+    },
+    resetOnError: false,
+  });
 
-  const catalog = useMemo(() => menuResource.data, [menuResource.data]);
+  const filteredOrders = useMemo(() => {
+    if (statusFilter === "all") return orders.filteredOrders;
+    return orders.filteredOrders.filter((entry) => entry.orderStatus === statusFilter);
+  }, [orders.filteredOrders, statusFilter]);
+
+  const onCreate = async (payload: CreateOrderPayload, price: number) => {
+    await orders.createOrder(payload, price);
+  };
+
+  const openEdit = (order: Order) => {
+    setEditOrder(order);
+    setEditName(order.customerName);
+    setEditPhone(order.phone);
+    setEditEmail(order.email);
+  };
 
   return (
     <div className="space-y-6">
-      <ResourceNote error={ordersResource.error} loading={ordersResource.loading} fallbackLabel="orders" />
-      
-      <OrderFilters />
-      <OrdersTable data={ordersResource.data} />
+      <ResourceNote
+        error={orders.error || orders.mutationError || menuResource.error}
+        loading={orders.loading || menuResource.loading}
+        fallbackLabel="orders"
+      />
+
+      <AddOrderForm catalog={menuResource.data} onAdd={onCreate} loading={orders.mutating} />
+
+      <OrderFilters
+        query={orders.query}
+        status={statusFilter}
+        onQueryChange={orders.setQuery}
+        onStatusChange={setStatusFilter}
+      />
+
+      <OrdersTable
+        data={filteredOrders}
+        onEdit={openEdit}
+        onDelete={(order) => setDeleteOrder(order)}
+        onStatusChange={orders.updateOrderStatus}
+        busy={orders.mutating}
+      />
+
+      <Modal open={Boolean(editOrder)}>
+        {editOrder && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-brand-ink dark:text-white">Edit Order {editOrder.id}</h3>
+            <Input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="Customer name" />
+            <Input value={editPhone} onChange={(event) => setEditPhone(event.target.value)} placeholder="Phone" />
+            <Input value={editEmail} onChange={(event) => setEditEmail(event.target.value)} placeholder="Email" />
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setEditOrder(null)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  await orders.updateOrder(editOrder, {
+                    customerName: editName,
+                    phone: editPhone,
+                    email: editEmail,
+                  });
+                  setEditOrder(null);
+                }}
+                disabled={orders.mutating}
+              >
+                {orders.mutating ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal open={Boolean(deleteOrder)}>
+        {deleteOrder && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-brand-ink dark:text-white">Delete {deleteOrder.id}?</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-300">
+              This action cannot be undone. The order will be removed from UI instantly and synced with backend.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setDeleteOrder(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  await orders.deleteOrder(deleteOrder);
+                  setDeleteOrder(null);
+                }}
+                disabled={orders.mutating}
+              >
+                {orders.mutating ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

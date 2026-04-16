@@ -19,17 +19,21 @@ const fallbackSubscribers: SubscriberRow[] = [
 ];
 
 export function NewsletterApiWorkspace() {
-  const resource = useBackendResource<SubscriberRow[]>(fallbackSubscribers, async () => {
-    const token = getAccessToken();
-    const response: any = await dashboardApi.getNewsletterSubscribers(token, { page: 1, limit: 20 });
-    const items = response?.data ?? [];
-    return Array.isArray(items)
-      ? items.map((item: any) => [
-          item?.email ?? "subscriber@example.com",
-          item?.status ?? "Active",
-          item?.createdAt ? new Date(item.createdAt).toLocaleDateString() : "-"
-        ])
-      : fallbackSubscribers;
+  const resource = useBackendResource<SubscriberRow[]>({
+    fallback: fallbackSubscribers,
+    loader: async () => {
+      const token = getAccessToken();
+      const response: any = await dashboardApi.getNewsletterSubscribers(token, { page: 1, limit: 20 });
+      const items = response?.data ?? [];
+      return Array.isArray(items)
+        ? items.map((item: any) => [
+            item?.email ?? "subscriber@example.com",
+            item?.status ?? "Active",
+            item?.createdAt ? new Date(item.createdAt).toLocaleDateString() : "-"
+          ])
+        : fallbackSubscribers;
+    },
+    resetOnError: false,
   });
 
   return (

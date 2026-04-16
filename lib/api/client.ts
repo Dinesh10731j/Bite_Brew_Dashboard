@@ -28,7 +28,7 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
-type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 type RequestConfig = {
   method?: HttpMethod;
   body?: unknown;
@@ -47,7 +47,8 @@ export async function apiRequest<T = any>(url: string, config: RequestConfig = {
     });
     return response.data as T;
   } catch (error: any) {
-    throw new Error(error?.message ?? 'Request failed');
+    const status = error?.status ?? error?.response?.status;
+    const message = error?.message ?? "Request failed";
+    throw new Error(status ? `${message} (HTTP ${status})` : message);
   }
 }
-

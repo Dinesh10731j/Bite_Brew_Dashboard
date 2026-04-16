@@ -24,10 +24,14 @@ function normalizeMenuItem(item: any): MenuItem {
 }
 
 export function MenuApiWorkspace() {
-  const resource = useBackendResource<MenuItem[]>(fallbackItems, async () => {
-    const response: any = await dashboardApi.getMenuItems({ page: 1, limit: 50 });
-    const items = response?.data ?? [];
-    return Array.isArray(items) ? items.map(normalizeMenuItem) : fallbackItems;
+  const resource = useBackendResource<MenuItem[]>({
+    fallback: fallbackItems,
+    loader: async () => {
+      const response: any = await dashboardApi.getMenuItems({ page: 1, limit: 50 });
+      const items = response?.data ?? [];
+      return Array.isArray(items) ? items.map(normalizeMenuItem) : fallbackItems;
+    },
+    resetOnError: false,
   });
 
   return (

@@ -34,10 +34,14 @@ function normalizeGallery(item: any): GalleryCard {
 }
 
 export function GalleryApiWorkspace() {
-  const resource = useBackendResource<GalleryCard[]>(fallbackItems as unknown as GalleryCard[], async () => {
-    const response: any = await dashboardApi.getGallery({ page: 1, limit: 24 });
-    const items = response?.data ?? [];
-    return Array.isArray(items) ? items.map(normalizeGallery) : (fallbackItems as unknown as GalleryCard[]);
+  const resource = useBackendResource<GalleryCard[]>({
+    fallback: fallbackItems as unknown as GalleryCard[],
+    loader: async () => {
+      const response: any = await dashboardApi.getGallery({ page: 1, limit: 24 });
+      const items = response?.data ?? [];
+      return Array.isArray(items) ? items.map(normalizeGallery) : (fallbackItems as unknown as GalleryCard[]);
+    },
+    resetOnError: false,
   });
 
   return (

@@ -1,5 +1,16 @@
-import { overviewMetrics } from "@/lib/mock-data";
+"use client";
+
+import { useMemo } from "react";
+import { useDashboard } from "@/hooks/useDashboard";
 
 export function useMetrics() {
-  return overviewMetrics;
+  const dashboard = useDashboard();
+  return useMemo(
+    () => ({
+      ...dashboard,
+      data: dashboard.data.metrics,
+      metrics: dashboard.data.metrics,
+    }),
+    [dashboard]
+  );
 }

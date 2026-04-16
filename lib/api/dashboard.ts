@@ -27,7 +27,7 @@ type NewsletterCampaignBody = {
   sendToRegisteredUsers?: boolean;
 };
 
-type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 type ProtectedRequestConfig = {
   method?: HttpMethod;
   body?: unknown;
@@ -71,9 +71,15 @@ async function protectedRequest<T = any>(path: string, config: ProtectedRequestC
     body: method === "GET" ? undefined : body,
   });
 
-  const payload = await response.json().catch(() => ({ message: "Request failed" }));
+  const payload = await response
+    .json()
+    .catch(() => ({} as Record<string, unknown>));
   if (!response.ok) {
-    throw new Error(payload?.message ?? "Request failed");
+    const message =
+      (payload as any)?.message ??
+      (payload as any)?.error?.message ??
+      `Request failed with status ${response.status}`;
+    throw new Error(message);
   }
   return payload as T;
 }
@@ -125,11 +131,19 @@ export const dashboardApi = {
   deleteMenuItem: (id: string, token: string) => protectedRequest(`/menu/items/${id}`, { method: "DELETE", token }),
 
   createOrder: (body: Record<string, unknown>, token?: string) =>
-    apiRequest(apiEndpoints.orders.list, { method: "POST", token, body }),
+    protectedRequest("/orders", { method: "POST", token, body }),
   getOrders: (token: string, params?: QueryParams) => protectedRequest("/orders", { token, params }),
   getOrderById: (id: string, token: string) => protectedRequest(`/orders/${id}`, { token }),
+  updateOrder: (id: string, token: string, body: Record<string, unknown>) =>
+    protectedRequest(`/orders/${id}`, { method: "PUT", token, body }),
   updateOrderStatus: (id: string, token: string, status: OrderStatus) =>
-    protectedRequest(`/orders/${id}/status`, { method: "PATCH", token, body: { status } }),
+    protectedRequest(`/orders/${id}/status`, {
+      method: "PATCH",
+      token,
+      body: { status, orderStatus: status.toUpperCase() },
+    }),
+  deleteOrder: (id: string, token: string) =>
+    protectedRequest(`/orders/${id}`, { method: "DELETE", token }),
 
   createMessage: (body: {
     senderName: string;

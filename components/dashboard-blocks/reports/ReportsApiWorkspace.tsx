@@ -27,22 +27,26 @@ const fallbackReport: SalesReportView = {
 };
 
 export function ReportsApiWorkspace() {
-  const resource = useBackendResource<SalesReportView>(fallbackReport, async () => {
-    const token = getAccessToken();
-    const response: any = await dashboardApi.getSalesReport(token);
-    const data = response?.data ?? {};
+  const resource = useBackendResource<SalesReportView>({
+    fallback: fallbackReport,
+    loader: async () => {
+      const token = getAccessToken();
+      const response: any = await dashboardApi.getSalesReport(token);
+      const data = response?.data ?? {};
 
-    return {
-      revenue: Number(data?.totals?.revenue ?? data?.totalRevenue ?? 0),
-      orders: Number(data?.totals?.orders ?? data?.totalOrders ?? 0),
-      topItems: Array.isArray(data?.topItems)
-        ? data.topItems.map((item: any) => ({
-            name: item?.name ?? item?.menuItem?.name ?? "Item",
-            orders: Number(item?.orders ?? item?.quantity ?? 0),
-            revenue: item?.revenue ? `NPR ${Number(item.revenue).toLocaleString()}` : undefined
-          }))
-        : []
-    };
+      return {
+        revenue: Number(data?.totals?.revenue ?? data?.totalRevenue ?? 0),
+        orders: Number(data?.totals?.orders ?? data?.totalOrders ?? 0),
+        topItems: Array.isArray(data?.topItems)
+          ? data.topItems.map((item: any) => ({
+              name: item?.name ?? item?.menuItem?.name ?? "Item",
+              orders: Number(item?.orders ?? item?.quantity ?? 0),
+              revenue: item?.revenue ? `NPR ${Number(item.revenue).toLocaleString()}` : undefined
+            }))
+          : []
+      };
+    },
+    resetOnError: false,
   });
 
   const headline = useMemo(

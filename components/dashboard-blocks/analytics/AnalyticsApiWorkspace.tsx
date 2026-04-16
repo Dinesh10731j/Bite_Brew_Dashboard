@@ -2,102 +2,63 @@
 
 import { BlockCard } from "@/components/dashboard-blocks/common";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
-import { useBackendResource } from "@/hooks/useBackendResource";
-import { getAccessToken } from "@/lib/auth";
-import { BounceRateChart } from "./BounceRateChart";
-import { BrowserStats } from "./BrowserStats";
-import { DeviceBreakdown } from "./DeviceBreakdown";
-import { OSStats } from "./OSStats";
-import { PageViewsChart } from "./PageViewsChart";
-import { ReferrersChart } from "./ReferrersChart";
-import { TrafficOverTime } from "./TrafficOverTime";
-import { UserSessions } from "./UserSessions";
-import { VisitorsByCity } from "./VisitorsByCity";
-import { VisitorsByCountry } from "./VisitorsByCountry";
-import { RealtimeUsersWidget } from "@/app/dashboard/(analytics)/realtime-users";
-
-type AnalyticsSummaryView = {
-  days: number;
-  totalVisits: number;
-  revenue: number;
-  totalOrders: number;
-  totalMessages: number;
-  conversionRate: number;
-};
-
-const fallbackSummary: AnalyticsSummaryView = {
-  days: 7,
-  totalVisits: 0,
-  revenue: 0,
-  totalOrders: 0,
-  totalMessages: 0,
-  conversionRate: 0
-};
-
-async function fetchAnalyticsSummary(days = 7) {
-  const token = getAccessToken();
-  const response = await fetch(`/dashboard/api/analytics/summary?days=${days}`, {
-    method: "GET",
-    credentials: "same-origin",
-    cache: "no-store",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
-
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({ message: "Failed to load analytics summary" }));
-    throw new Error(payload?.message ?? "Failed to load analytics summary");
-  }
-
-  return response.json();
-}
+import { AreaChart } from "@/components/shared/charts/AreaChart";
+import { BarChart } from "@/components/shared/charts/BarChart";
+import { LineChart } from "@/components/shared/charts/LineChart";
+import { useAnalytics } from "@/hooks/useAnalytics";
 
 export function AnalyticsApiWorkspace() {
-  const summaryResource = useBackendResource<AnalyticsSummaryView>(fallbackSummary, async () => {
-    const response: any = await fetchAnalyticsSummary(7);
-    const data = response?.data ?? {};
-    const totals = data?.totals ?? {};
+  const analytics = useAnalytics(7);
 
-    return {
-      days: 7,
-      totalVisits: Number(totals?.visits ?? 0),
-      revenue: Number(data?.revenue ?? 0),
-      totalOrders: Number(totals?.orders ?? 0),
-      totalMessages: Number(totals?.messages ?? 0),
-      conversionRate: Number(data?.conversionRate ?? 0),
-    };
-  });
+  const salesOverviewData = analytics.charts.salesOverview.length
+    ? analytics.charts.salesOverview
+    : [{ label: "No Data", visitors: 0, orders: 0, revenue: 0 }];
+
+  const ordersPerDayData = analytics.charts.ordersPerDay.length
+    ? analytics.charts.ordersPerDay
+    : [{ label: "No Data", value: 0 }];
+
+  const revenueData = analytics.charts.revenueAnalytics.length
+    ? analytics.charts.revenueAnalytics.map((item) => ({
+        label: item.label,
+        visitors: 0,
+        orders: 0,
+        revenue: item.value,
+      }))
+    : [{ label: "No Data", visitors: 0, orders: 0, revenue: 0 }];
 
   return (
     <div className="space-y-6 pb-24 xl:pb-6">
-      <ResourceNote error={summaryResource.error} loading={summaryResource.loading} fallbackLabel="analytics" />
-      <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <TrafficOverTime />
-        <RealtimeUsersWidget />
+      <ResourceNote error={analytics.error} loading={analytics.loading} fallbackLabel="analytics" />
+
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+        <BlockCard title="Visits">
+          <p className="text-3xl font-semibold text-brand-ink dark:text-white">{analytics.data.totalVisits.toLocaleString()}</p>
+        </BlockCard>
+        <BlockCard title="Orders">
+          <p className="text-3xl font-semibold text-brand-ink dark:text-white">{analytics.data.totalOrders.toLocaleString()}</p>
+        </BlockCard>
+        <BlockCard title="Messages">
+          <p className="text-3xl font-semibold text-brand-ink dark:text-white">{analytics.data.totalMessages.toLocaleString()}</p>
+        </BlockCard>
+        <BlockCard title="Revenue">
+          <p className="text-3xl font-semibold text-brand-ink dark:text-white">NPR {analytics.data.revenue.toLocaleString()}</p>
+        </BlockCard>
+        <BlockCard title="Conversion">
+          <p className="text-3xl font-semibold text-brand-ink dark:text-white">{analytics.data.conversionRate.toFixed(2)}%</p>
+        </BlockCard>
       </div>
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <UserSessions />
-        <BounceRateChart />
-        <PageViewsChart />
-        <RealtimeUsersWidget />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <VisitorsByCountry />
-        <VisitorsByCity />
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-        <DeviceBreakdown />
-        <BrowserStats />
-        <OSStats />
-      </div>
-      <ReferrersChart />
-      <BlockCard title="Live Analytics Summary" description="Data from GET /analytics/summary (days=7).">
-        <div className="grid gap-3 text-sm text-slate-600 dark:text-slate-200 md:grid-cols-5">
-          <p>Visits: {summaryResource.data.totalVisits.toLocaleString()}</p>
-          <p>Orders: {summaryResource.data.totalOrders.toLocaleString()}</p>
-          <p>Messages: {summaryResource.data.totalMessages.toLocaleString()}</p>
-          <p>Revenue: NPR {summaryResource.data.revenue.toLocaleString()}</p>
-          <p>Conversion: {summaryResource.data.conversionRate.toFixed(2)}%</p>
-        </div>
+
+      <BlockCard title="Sales Overview" description="Dynamic traffic trend from analytics API.">
+        <LineChart data={salesOverviewData} />
+      </BlockCard>
+
+      <BlockCard title="Orders Per Day" description="Daily orders from analytics API.">
+        <BarChart data={ordersPerDayData} />
+      </BlockCard>
+
+      <BlockCard title="Revenue Analytics" description="Daily revenue from analytics API.">
+        <AreaChart data={revenueData} />
       </BlockCard>
     </div>
   );

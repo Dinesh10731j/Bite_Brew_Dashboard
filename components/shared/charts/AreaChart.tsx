@@ -1,22 +1,48 @@
+"use client";
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
 import type { TrafficPoint } from "@/lib/types";
 
-export function AreaChart({ data }: { data: TrafficPoint[] }) {
-  const max = Math.max(...data.map((item) => item.visitors));
-  const points = data
-    .map((item, index) => `${(index / Math.max(data.length - 1, 1)) * 100},${100 - (item.visitors / max) * 80}`)
-    .join(" ");
-  const area = `0,100 ${points} 100,100`;
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
+export function AreaChart({ data }: { data: TrafficPoint[] }) {
   return (
-    <svg viewBox="0 0 100 100" className="h-44 w-full overflow-visible">
-      <defs>
-        <linearGradient id="areaFill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#207659" stopOpacity="0.45" />
-          <stop offset="100%" stopColor="#207659" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon points={area} fill="url(#areaFill)" />
-      <polyline fill="none" stroke="#1a5a46" strokeWidth="3" points={points} vectorEffect="non-scaling-stroke" />
-    </svg>
+    <div className="h-64 w-full">
+      <Line
+        data={{
+          labels: data.map((item) => item.label),
+          datasets: [
+            {
+              label: "Revenue",
+              data: data.map((item) => item.revenue ?? 0),
+              borderColor: "#1a5a46",
+              backgroundColor: "rgba(26, 90, 70, 0.25)",
+              fill: true,
+              tension: 0.35,
+              pointRadius: 2,
+            },
+          ],
+        }}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true },
+          },
+        }}
+      />
+    </div>
   );
 }

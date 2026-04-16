@@ -31,8 +31,8 @@ function normalizeNotification(item: any): NotificationRow {
 }
 
 export function NotificationsApiWorkspace() {
-  const resource = useBackendResource<NotificationRow[]>(
-    fallbackNotifications.map((item) => ({
+  const resource = useBackendResource<NotificationRow[]>({
+    fallback: fallbackNotifications.map((item) => ({
       id: item.id,
       type: item.type,
       content: item.content,
@@ -41,7 +41,7 @@ export function NotificationsApiWorkspace() {
       priority: item.priority,
       actionLink: item.actionLink
     })),
-    async () => {
+    loader: async () => {
       const token = getAccessToken();
       const response: any = await dashboardApi.getNotifications(token, { page: 1, limit: 20 });
       const items = response?.data ?? [];
@@ -56,8 +56,9 @@ export function NotificationsApiWorkspace() {
             priority: item.priority,
             actionLink: item.actionLink
           }));
-    }
-  );
+    },
+    resetOnError: false,
+  });
 
   const latest = resource.data[0];
 
