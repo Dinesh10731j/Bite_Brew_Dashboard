@@ -14,18 +14,22 @@ const fallbackUsers = [
 ];
 
 export function UsersApiWorkspace() {
-  const resource = useBackendResource<string[][]>(fallbackUsers, async () => {
-    const token = getAccessToken();
-    const response: any = await dashboardApi.getUsers(token, { page: 1, limit: 20 });
-    const items = response?.data ?? [];
-    return Array.isArray(items)
-      ? items.map((item: any) => [
-          item?.name ?? "User",
-          item?.role ?? "user",
-          item?.role === "admin" ? "Full access" : item?.role === "manager" ? "Operational access" : "Basic access",
-          item?.updatedAt ? new Date(item.updatedAt).toLocaleString() : "-"
-        ])
-      : fallbackUsers;
+  const resource = useBackendResource<string[][]>({
+    fallback: fallbackUsers,
+    loader: async () => {
+      const token = getAccessToken();
+      const response: any = await dashboardApi.getUsers(token, { page: 1, limit: 20 });
+      const items = response?.data ?? [];
+      return Array.isArray(items)
+        ? items.map((item: any) => [
+            item?.name ?? "User",
+            item?.role ?? "user",
+            item?.role === "admin" ? "Full access" : item?.role === "manager" ? "Operational access" : "Basic access",
+            item?.updatedAt ? new Date(item.updatedAt).toLocaleString() : "-"
+          ])
+        : fallbackUsers;
+    },
+    resetOnError: false,
   });
 
   return (

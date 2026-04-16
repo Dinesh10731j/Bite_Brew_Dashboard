@@ -1,18 +1,42 @@
+"use client";
+
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+
 export function BarChart({ data }: { data: { label: string; value: number }[] }) {
-  const max = Math.max(...data.map((item) => item.value));
   return (
-    <div className="space-y-3">
-      {data.map((item) => (
-        <div key={item.label} className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span>{item.label}</span>
-            <span>{item.value}%</span>
-          </div>
-          <div className="h-2 rounded-full bg-slate-200/70 dark:bg-white/10">
-            <div className="h-2 rounded-full bg-brand" style={{ width: `${(item.value / max) * 100}%` }} />
-          </div>
-        </div>
-      ))}
+    <div className="h-64 w-full">
+      <Bar
+        data={{
+          labels: data.map((item) => item.label),
+          datasets: [
+            {
+              label: "Value",
+              data: data.map((item) => item.value),
+              backgroundColor: "rgba(32, 118, 89, 0.75)",
+              borderRadius: 8,
+            },
+          ],
+        }}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false } },
+            y: { beginAtZero: true },
+          },
+        }}
+      />
     </div>
   );
 }
