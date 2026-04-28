@@ -5,9 +5,9 @@ import { X } from "lucide-react";
 import { Coffee, LogOut } from "lucide-react";
 import { Card } from "@/components/shared/ui/Card";
 import { Button } from "@/components/shared/ui/Button";
-import { clearAccessToken } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { CollapsibleNav } from "./CollapsibleNav";
+import { dashboardApi } from "@/lib/api/dashboard";
 
 type SidebarProps = {
   collapsed?: boolean;
@@ -18,10 +18,14 @@ type SidebarProps = {
 export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }: SidebarProps) {
   const router = useRouter();
 
-  const handleLogout = () => {
-    clearAccessToken();
-    onCloseMobile?.();
-    router.refresh();
+  const handleLogout = async () => {
+    try {
+      await dashboardApi.logout();
+    } finally {
+      onCloseMobile?.();
+      router.replace("/login");
+      router.refresh();
+    }
   };
 
   return (

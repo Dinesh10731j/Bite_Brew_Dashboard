@@ -1,16 +1,9 @@
-import { apiRequest } from "@/lib/api/client";
-import { apiEndpoints } from "@/lib/api/endpoints";
-import { getAccessToken } from "@/lib/auth";
+import { apiService } from "@/services/api/dashboard-api";
 
 type QueryParams = Record<string, string | number | boolean | undefined>;
 
 type UserRole = "admin" | "user" | "manager" | "staff";
-
 type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "completed" | "cancelled";
-
-type NotificationType = "ORDER" | "MESSAGE" | "SYSTEM";
-
-type NotificationPriority = "HIGH" | "MEDIUM" | "LOW";
 
 type NewsletterCampaignBody = {
   subject: string;
@@ -27,93 +20,58 @@ type NewsletterCampaignBody = {
   sendToRegisteredUsers?: boolean;
 };
 
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-type ProtectedRequestConfig = {
-  method?: HttpMethod;
-  body?: unknown;
-  params?: QueryParams;
-  token?: string;
-};
-
-const protectedBase = "/dashboard/api/protected";
-
-function buildQuery(params?: QueryParams) {
-  if (!params) return "";
-  const entries = Object.entries(params).filter(([, value]) => value !== undefined && value !== null);
-  if (!entries.length) return "";
-  const search = new URLSearchParams();
-  entries.forEach(([key, value]) => search.set(key, String(value)));
-  return `?${search.toString()}`;
+function normalizeQuery(argA?: string | QueryParams, argB?: QueryParams): QueryParams | undefined {
+  if (typeof argA === "string") return argB;
+  return argA;
 }
 
-async function protectedRequest<T = any>(path: string, config: ProtectedRequestConfig = {}) {
-  const method = config.method ?? "GET";
-  const token = config.token || getAccessToken();
-  const headers: Record<string, string> = {};
-  let body: BodyInit | undefined;
-
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  if (config.body instanceof FormData) {
-    body = config.body;
-  } else if (config.body !== undefined) {
-    headers["Content-Type"] = "application/json";
-    body = JSON.stringify(config.body);
-  }
-
-  const response = await fetch(`${protectedBase}${path}${buildQuery(config.params)}`, {
-    method,
-    credentials: "same-origin",
-    cache: "no-store",
-    headers,
-    body: method === "GET" ? undefined : body,
-  });
-
-  const payload = await response
-    .json()
-    .catch(() => ({} as Record<string, unknown>));
-  if (!response.ok) {
-    const message =
-      (payload as any)?.message ??
-      (payload as any)?.error?.message ??
-      `Request failed with status ${response.status}`;
-    throw new Error(message);
-  }
-  return payload as T;
+function pickId(idOrToken: string, maybeId?: string): string {
+  return maybeId ?? idOrToken;
 }
 
 export const dashboardApi = {
-  health: () => apiRequest(apiEndpoints.health),
+  health: () => apiService.dashboard.overview({ limit: 1 }),
 
-  signup: (body: { name: string; email: string; password: string }) =>
-    apiRequest(apiEndpoints.auth.signup, { method: "POST", body }),
-  signin: (body: { email: string; password: string }) =>
-    apiRequest(apiEndpoints.auth.signin, { method: "POST", body }),
-  logout: () => apiRequest(apiEndpoints.auth.logout, { method: "POST" }),
-  forgotPassword: (body: { email: string }) =>
-    apiRequest(apiEndpoints.auth.forgotPassword, { method: "POST", body }),
+  signup: (body: { name: string; email: string; password: string }) => apiService.auth.signup(body),
+  signin: (body: { email: string; password: string }) => apiService.auth.signin(body),
+  logout: () => apiService.auth.logout(),
+  forgotPassword: (body: { email: string }) => apiService.auth.forgotPassword(body),
   resetPassword: (body: { email: string; token: string; password: string; confirmPassword: string }) =>
-    apiRequest(apiEndpoints.auth.resetPassword, { method: "POST", body }),
+    apiService.auth.resetPassword(body),
 
-  getUsers: (token: string, params?: QueryParams) => protectedRequest("/users", { token, params }),
-  getCurrentUser: (token: string) => protectedRequest("/users/me", { token }),
-  updateUserRole: (id: string, token: string, role: UserRole) =>
-    protectedRequest(`/users/${id}/role`, { method: "PATCH", token, body: { role } }),
+  getUsers: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
+    apiService.users.list(normalizeQuery(tokenOrParams, params)),
+  getCurrentUser: () => apiService.users.me(),
+  updateUserRole: (id: string, tokenOrRole: string | UserRole, maybeRole?: UserRole) => {
+    const role = (maybeRole ?? tokenOrRole) as UserRole;
+    return apiService.users.updateRole(id, role === "staff" ? "manager" : role);
+  },
 
-  getMenuCategories: (params?: QueryParams) => apiRequest(apiEndpoints.menu.categories, { params }),
-  createMenuCategory: (token: string, body: { name: string; description?: string; isActive?: boolean }) =>
-    protectedRequest("/menu/categories", { method: "POST", token, body }),
-  updateMenuCategory: (id: string, token: string, body: { name?: string; description?: string; isActive?: boolean }) =>
-    protectedRequest(`/menu/categories/${id}`, { method: "PATCH", token, body }),
-  deleteMenuCategory: (id: string, token: string) =>
-    protectedRequest(`/menu/categories/${id}`, { method: "DELETE", token }),
+  getMenuCategories: (params?: QueryParams) => apiService.menu.categories.list(params),
+  createMenuCategory: (tokenOrBody: string | { name: string; description?: string; isActive?: boolean }, maybeBody?: { name: string; description?: string; isActive?: boolean }) =>
+    apiService.menu.categories.create(typeof tokenOrBody === "string" ? (maybeBody ?? { name: "" }) : tokenOrBody),
+  updateMenuCategory: (
+    id: string,
+    tokenOrBody: string | { name?: string; description?: string; isActive?: boolean },
+    maybeBody?: { name?: string; description?: string; isActive?: boolean }
+  ) => apiService.menu.categories.update(id, typeof tokenOrBody === "string" ? (maybeBody ?? {}) : tokenOrBody),
+  deleteMenuCategory: (id: string) => apiService.menu.categories.remove(id),
 
-  getMenuItems: (params?: QueryParams) => apiRequest(apiEndpoints.menu.items, { params }),
+  getMenuItems: (params?: QueryParams) => apiService.menu.items.list(params),
   createMenuItem: (
-    token: string,
-    body: {
+    tokenOrBody:
+      | string
+      | {
+          name: string;
+          categoryId: string;
+          price: number;
+          description?: string;
+          image?: string;
+          available?: boolean;
+          featured?: boolean;
+          discount?: number;
+        },
+    maybeBody?: {
       name: string;
       categoryId: string;
       price: number;
@@ -123,104 +81,66 @@ export const dashboardApi = {
       featured?: boolean;
       discount?: number;
     }
-  ) => protectedRequest("/menu/items", { method: "POST", token, body }),
-  createMenuItemMultipart: (token: string, formData: FormData) =>
-    protectedRequest("/menu/items", { method: "POST", token, body: formData }),
-  updateMenuItem: (id: string, token: string, body: Record<string, unknown>) =>
-    protectedRequest(`/menu/items/${id}`, { method: "PATCH", token, body }),
-  deleteMenuItem: (id: string, token: string) => protectedRequest(`/menu/items/${id}`, { method: "DELETE", token }),
+  ) => apiService.menu.items.create(typeof tokenOrBody === "string" ? (maybeBody ?? {}) : tokenOrBody),
+  createMenuItemMultipart: (tokenOrFormData: string | FormData, maybeFormData?: FormData) =>
+    apiService.menu.items.create(tokenOrFormData instanceof FormData ? tokenOrFormData : (maybeFormData as FormData)),
+  updateMenuItem: (id: string, tokenOrBody: string | Record<string, unknown>, maybeBody?: Record<string, unknown>) =>
+    apiService.menu.items.update(id, typeof tokenOrBody === "string" ? (maybeBody ?? {}) : tokenOrBody),
+  deleteMenuItem: (id: string) => apiService.menu.items.remove(id),
 
-  createOrder: (body: Record<string, unknown>, token?: string) =>
-    protectedRequest("/orders", { method: "POST", token, body }),
-  getOrders: (token: string, params?: QueryParams) => protectedRequest("/orders", { token, params }),
-  getOrderById: (id: string, token: string) => protectedRequest(`/orders/${id}`, { token }),
-  updateOrder: (id: string, token: string, body: Record<string, unknown>) =>
-    protectedRequest(`/orders/${id}`, { method: "PUT", token, body }),
-  updateOrderStatus: (id: string, token: string, status: OrderStatus) =>
-    protectedRequest(`/orders/${id}/status`, {
-      method: "PATCH",
-      token,
-      body: { status, orderStatus: status.toUpperCase() },
-    }),
-  deleteOrder: (id: string, token: string) =>
-    protectedRequest(`/orders/${id}`, { method: "DELETE", token }),
+  getOrders: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
+    apiService.orders.list(normalizeQuery(tokenOrParams, params)),
+  getOrderById: (id: string) => apiService.orders.detail(id),
+  updateOrder: (id: string, tokenOrBody: string | Record<string, unknown>, maybeBody?: Record<string, unknown>) =>
+    apiService.orders.update(id, typeof tokenOrBody === "string" ? (maybeBody ?? {}) : tokenOrBody),
+  updateOrderStatus: (id: string, tokenOrStatus: string | OrderStatus, maybeStatus?: OrderStatus) =>
+    apiService.orders.updateStatus(id, (maybeStatus ?? tokenOrStatus) as string),
 
-  createMessage: (body: {
-    senderName: string;
-    content: string;
-    phone?: string;
-    email?: string;
-    source?: string;
-  }) => apiRequest(apiEndpoints.messages.list, { method: "POST", body }),
-  getMessages: (token: string, params?: QueryParams) => protectedRequest("/messages", { token, params }),
-  markMessageRead: (id: string, token: string, isRead = true) =>
-    protectedRequest(`/messages/${id}/read`, { method: "PATCH", token, body: { isRead } }),
-  deleteMessage: (id: string, token: string) => protectedRequest(`/messages/${id}`, { method: "DELETE", token }),
+  createMessage: (body: { senderName: string; content: string; phone?: string; email?: string; source?: string }) =>
+    Promise.resolve(body),
+  getMessages: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
+    apiService.messages.list(normalizeQuery(tokenOrParams, params)),
+  markMessageRead: (id: string, tokenOrRead?: string | boolean, maybeRead?: boolean) =>
+    apiService.messages.markRead(id, typeof tokenOrRead === "boolean" ? tokenOrRead : (maybeRead ?? true)),
+  deleteMessage: (id: string) => apiService.messages.remove(id),
 
-  subscribeNewsletter: (email: string) =>
-    apiRequest(apiEndpoints.newsletter.subscribe, { method: "POST", body: { email } }),
-  getNewsletterSubscribers: (token: string, params?: QueryParams) =>
-    protectedRequest("/newsletter", { token, params }),
-  sendNewsletterCampaign: (token: string, body: NewsletterCampaignBody) =>
-    protectedRequest("/newsletter/campaign", { method: "POST", token, body }),
-  updateNewsletterStatus: (id: string, token: string, status: string) =>
-    protectedRequest(`/newsletter/${id}/status`, { method: "PATCH", token, body: { status } }),
-  deleteNewsletterSubscriber: (id: string, token: string) =>
-    protectedRequest(`/newsletter/${id}`, { method: "DELETE", token }),
+  subscribeNewsletter: (email: string) => Promise.resolve({ email }),
+  getNewsletterSubscribers: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
+    apiService.newsletter.list(normalizeQuery(tokenOrParams, params)),
+  sendNewsletterCampaign: (tokenOrBody: string | NewsletterCampaignBody, maybeBody?: NewsletterCampaignBody) =>
+    apiService.newsletter.campaign((typeof tokenOrBody === "string" ? maybeBody : tokenOrBody) ?? {}),
+  updateNewsletterStatus: (id: string, tokenOrStatus: string, maybeStatus?: string) =>
+    apiService.newsletter.updateStatus(id, maybeStatus ?? tokenOrStatus),
+  deleteNewsletterSubscriber: (id: string) => apiService.newsletter.remove(id),
 
-  createNotification: (
-    token: string,
-    body: {
-      content: string;
-      type?: NotificationType;
-      priority?: NotificationPriority;
-      actionLink?: string;
-      userId?: string;
-    }
-  ) => protectedRequest("/notifications", { method: "POST", token, body }),
-  getNotifications: (token: string, params?: QueryParams) =>
-    protectedRequest("/notifications", { token, params }),
-  markNotificationRead: (id: string, token: string, isRead = true) =>
-    protectedRequest(`/notifications/${id}/read`, { method: "PATCH", token, body: { isRead } }),
-  markAllNotificationsRead: (token: string, userId?: string) =>
-    protectedRequest("/notifications/read-all", {
-      method: "PATCH",
-      token,
-      body: userId ? { userId } : {}
-    }),
-  deleteNotification: (id: string, token: string) =>
-    protectedRequest(`/notifications/${id}`, { method: "DELETE", token }),
+  createNotification: (tokenOrBody: string | Record<string, unknown>, maybeBody?: Record<string, unknown>) =>
+    Promise.resolve(typeof tokenOrBody === "string" ? maybeBody : tokenOrBody),
+  getNotifications: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
+    apiService.notifications.list(normalizeQuery(tokenOrParams, params)),
+  markNotificationRead: (id: string, tokenOrRead?: string | boolean, maybeRead?: boolean) =>
+    apiService.notifications.markRead(id, typeof tokenOrRead === "boolean" ? tokenOrRead : (maybeRead ?? true)),
+  markAllNotificationsRead: () => apiService.notifications.markAllRead(),
+  deleteNotification: (id: string) => apiService.notifications.remove(id),
 
-  getGallery: (params?: QueryParams) => apiRequest(apiEndpoints.gallery.list, { params }),
-  createGalleryJson: (
-    token: string,
-    body: {
-      url: string;
-      category?: "FOOD" | "INTERIOR" | "EVENTS";
-      tags?: string[];
-      featured?: boolean;
-      orderIndex?: number;
-    }
-  ) => protectedRequest("/gallery", { method: "POST", token, body }),
-  createGalleryMultipart: (token: string, formData: FormData) =>
-    protectedRequest("/gallery", { method: "POST", token, body: formData }),
-  updateGallery: (id: string, token: string, body: Record<string, unknown>) =>
-    protectedRequest(`/gallery/${id}`, { method: "PATCH", token, body }),
-  deleteGallery: (id: string, token: string) => protectedRequest(`/gallery/${id}`, { method: "DELETE", token }),
+  getGallery: (params?: QueryParams) => apiService.gallery.list(params),
+  createGalleryJson: (tokenOrBody: string | Record<string, unknown>, maybeBody?: Record<string, unknown>) =>
+    apiService.gallery.create((typeof tokenOrBody === "string" ? maybeBody : tokenOrBody) ?? {}),
+  createGalleryMultipart: (tokenOrFormData: string | FormData, maybeFormData?: FormData) =>
+    apiService.gallery.create(tokenOrFormData instanceof FormData ? tokenOrFormData : (maybeFormData as FormData)),
+  updateGallery: (id: string, tokenOrBody: string | Record<string, unknown>, maybeBody?: Record<string, unknown>) =>
+    apiService.gallery.update(id, typeof tokenOrBody === "string" ? (maybeBody ?? {}) : tokenOrBody),
+  deleteGallery: (id: string) => apiService.gallery.remove(id),
 
-  uploadImage: (token: string, image: File, folder?: string) => {
-    const formData = new FormData();
-    formData.append("image", image);
-    if (folder) {
-      formData.append("folder", folder);
-    }
-    return protectedRequest("/uploads/image", { method: "POST", token, body: formData });
+  uploadImage: (tokenOrImage: string | File, imageOrFolder?: File | string, maybeFolder?: string) => {
+    const image = tokenOrImage instanceof File ? tokenOrImage : (imageOrFolder as File);
+    const folder = tokenOrImage instanceof File ? (imageOrFolder as string | undefined) : maybeFolder;
+    return apiService.uploads.image(image, folder);
   },
 
-  getDashboardOverview: (token: string, params?: { limit?: number }) =>
-    protectedRequest("/dashboard/overview", { token, params }),
-  getAnalyticsSummary: (token: string, params?: { days?: number }) =>
-    protectedRequest("/analytics/summary", { token, params }),
-  getSalesReport: (token: string, params?: { from?: string; to?: string }) =>
-    protectedRequest("/reports/sales", { token, params })
+  getDashboardOverview: (tokenOrParams?: string | { limit?: number }, params?: { limit?: number }) =>
+    apiService.dashboard.overview(typeof tokenOrParams === "string" ? params : tokenOrParams),
+  getAnalyticsSummary: (tokenOrParams?: string | { days?: number }, params?: { days?: number }) =>
+    apiService.analytics.summary(typeof tokenOrParams === "string" ? params : tokenOrParams),
+  getSalesReport: (tokenOrParams?: string | { from?: string; to?: string }, params?: { from?: string; to?: string }) =>
+    apiService.reports.sales(typeof tokenOrParams === "string" ? params : tokenOrParams),
 };

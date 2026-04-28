@@ -1,19 +1,16 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowUpRight, GripVertical } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { BarChart } from "@/components/shared/charts/BarChart";
-import { LineChart } from "@/components/shared/charts/LineChart";
 import { PieChart } from "@/components/shared/charts/PieChart";
 import { DataTable } from "@/components/shared/tables/DataTable";
-import { TableActions } from "@/components/shared/tables/TableActions";
 import { TableCell } from "@/components/shared/tables/TableCell";
 import { TableRow } from "@/components/shared/tables/TableRow";
 import { Badge } from "@/components/shared/ui/Badge";
 import { Button } from "@/components/shared/ui/Button";
 import { Card } from "@/components/shared/ui/Card";
+import { Empty } from "@/components/shared/ui/Empty";
 import { Pagination } from "@/components/shared/ui/Pagination";
-import { galleryItems, trafficSummary } from "@/lib/mock-data";
 import { cn, formatCurrency } from "@/lib/utils";
 
 export function BlockCard({
@@ -21,7 +18,7 @@ export function BlockCard({
   description,
   action,
   children,
-  className
+  className,
 }: {
   title: string;
   description?: string;
@@ -55,7 +52,13 @@ export function MetricPanel({ label, value, delta }: { label: string; value: str
   );
 }
 
-export function InsightList({ items, valueLabel }: { items: { name?: string; place?: string; orders?: number; visitors?: number; revenue?: string }[]; valueLabel: "orders" | "visitors" }) {
+export function InsightList({
+  items,
+  valueLabel,
+}: {
+  items: { name?: string; place?: string; orders?: number; visitors?: number; revenue?: string; price?: string }[];
+  valueLabel: "orders" | "visitors";
+}) {
   return (
     <div className="space-y-3">
       {items.map((item) => (
@@ -63,8 +66,15 @@ export function InsightList({ items, valueLabel }: { items: { name?: string; pla
           <div>
             <p className="font-medium text-brand-ink dark:text-white">{item.name ?? item.place}</p>
             {item.revenue && <p className="text-xs text-slate-500 dark:text-slate-400">{item.revenue}</p>}
+            {!item.revenue && item.price && <p className="text-xs text-slate-500 dark:text-slate-400">{item.price}</p>}
           </div>
-          <Badge tone="brand">{valueLabel === "orders" ? `${item.orders} orders` : `${item.visitors} visitors`}</Badge>
+          {valueLabel === "orders" && item.orders !== undefined && item.orders > 0 ? (
+            <Badge tone="brand">{item.orders} orders</Badge>
+          ) : valueLabel === "visitors" && item.visitors !== undefined ? (
+            <Badge tone="brand">{item.visitors} visitors</Badge>
+          ) : (
+            <Badge tone="neutral">-</Badge>
+          )}
         </div>
       ))}
     </div>
@@ -72,7 +82,7 @@ export function InsightList({ items, valueLabel }: { items: { name?: string; pla
 }
 
 export function SimpleList({
-  items
+  items,
 }: {
   items: { title: string; subtitle: string; badge?: string; tone?: "neutral" | "brand" | "success" | "warning" | "danger" }[];
 }) {
@@ -94,7 +104,7 @@ export function SimpleList({
 export function TrafficBlock() {
   return (
     <BlockCard title="Traffic Summary" description="Last 7 days of visitor activity and trend movement.">
-      <LineChart data={trafficSummary} />
+      <Empty title="No Traffic Data" description="Traffic chart requires backend response data." />
     </BlockCard>
   );
 }
@@ -103,7 +113,7 @@ export function BreakdownBlock({
   title,
   description,
   data,
-  pie = false
+  pie = false,
 }: {
   title: string;
   description: string;
@@ -116,7 +126,7 @@ export function BreakdownBlock({
         <PieChart
           data={data.map((item, index) => ({
             ...item,
-            color: item.color ?? ["#207659", "#38a169", "#9fd8bf", "#1a5a46"][index % 4]
+            color: item.color ?? ["#207659", "#38a169", "#9fd8bf", "#1a5a46"][index % 4],
           }))}
         />
       ) : (
@@ -130,7 +140,7 @@ export function GenericTable({
   title,
   description,
   headers,
-  rows
+  rows,
 }: {
   title: string;
   description?: string;
@@ -155,7 +165,7 @@ export function GenericTable({
 
 export function SettingsSection({
   title,
-  fields
+  fields,
 }: {
   title: string;
   fields: { label: string; value: string }[];
@@ -177,41 +187,7 @@ export function SettingsSection({
 export function GalleryBlock() {
   return (
     <BlockCard title="Gallery Manager" description="Featured media, tags, and reorder controls.">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {galleryItems.map((item) => (
-          <div key={item.id} className="overflow-hidden rounded-3xl border border-brand/10 dark:border-white/10">
-            <div className="relative h-52">
-              <Image src={item.image} alt={item.title} fill className="object-cover" unoptimized />
-            </div>
-            <div className="space-y-3 p-4">
-              <div className="flex items-center justify-between">
-                <Badge tone="brand">{item.category}</Badge>
-                <GripVertical className="h-4 w-4 text-slate-400" />
-              </div>
-              <div>
-                <p className="font-medium text-brand-ink dark:text-white">{item.title}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Uploaded {item.uploadDate}</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {item.featured && <Badge tone="warning">Featured</Badge>}
-                {item.tags.map((tag) => (
-                  <Badge key={tag} tone="neutral">
-                    #{tag}
-                  </Badge>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" className="flex-1">
-                  Edit
-                </Button>
-                <Button variant="danger" className="flex-1">
-                  Delete
-                </Button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      <Empty title="No Gallery Preview" description="Gallery preview requires live backend media data." />
     </BlockCard>
   );
 }
@@ -238,7 +214,7 @@ export function ExportCard() {
 
 export function DetailCard({
   title,
-  items
+  items,
 }: {
   title: string;
   items: { label: string; value: string }[];

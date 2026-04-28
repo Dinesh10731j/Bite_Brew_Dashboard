@@ -1,6 +1,12 @@
 import { InsightList } from "@/components/dashboard-blocks/common";
-import { topLocations } from "@/lib/mock-data";
+import { Empty } from "@/components/shared/ui/Empty";
 
-export function TopLocations({ items = topLocations }: { items?: typeof topLocations }) {
+type TopLocation = { place?: string; visitors?: number };
+
+export function TopLocations({ items = [] }: { items?: TopLocation[] }) {
+  if (!items.length) {
+    return <Empty title="No Traffic Locations" description="Backend did not return location analytics yet." />;
+  }
+
   return <InsightList items={items} valueLabel="visitors" />;
 }

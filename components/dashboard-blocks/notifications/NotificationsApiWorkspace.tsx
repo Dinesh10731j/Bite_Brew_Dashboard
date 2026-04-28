@@ -1,84 +1,92 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { DetailCard, GenericTable } from "@/components/dashboard-blocks/common";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
-import { useBackendResource } from "@/hooks/useBackendResource";
-import { dashboardApi } from "@/lib/api/dashboard";
-import { getAccessToken } from "@/lib/auth";
-import { notifications as fallbackNotifications } from "@/lib/mock-data";
-import { NotificationFilters } from "./NotificationFilters";
-
-type NotificationRow = {
-  id: string;
-  type: string;
-  content: string;
-  timestamp: string;
-  isRead: boolean;
-  priority: string;
-  actionLink: string;
-};
-
-function normalizeNotification(item: any): NotificationRow {
-  return {
-    id: item?.id ?? item?._id ?? "NOT-1",
-    type: String(item?.type ?? "SYSTEM"),
-    content: item?.content ?? "",
-    timestamp: item?.createdAt ? new Date(item.createdAt).toLocaleString() : "-",
-    isRead: Boolean(item?.isRead),
-    priority: String(item?.priority ?? "MEDIUM"),
-    actionLink: item?.actionLink ?? "#"
-  };
-}
+import { Input } from "@/components/shared/ui/Input";
+import { Select } from "@/components/shared/ui/Select";
+import { Button } from "@/components/shared/ui/Button";
+import { useNotificationsStore } from "@/store/notifications-context";
 
 export function NotificationsApiWorkspace() {
-  const resource = useBackendResource<NotificationRow[]>({
-    fallback: fallbackNotifications.map((item) => ({
-      id: item.id,
-      type: item.type,
-      content: item.content,
-      timestamp: item.timestamp,
-      isRead: item.isRead,
-      priority: item.priority,
-      actionLink: item.actionLink
-    })),
-    loader: async () => {
-      const token = getAccessToken();
-      const response: any = await dashboardApi.getNotifications(token, { page: 1, limit: 20 });
-      const items = response?.data ?? [];
-      return Array.isArray(items)
-        ? items.map(normalizeNotification)
-        : fallbackNotifications.map((item) => ({
-            id: item.id,
-            type: item.type,
-            content: item.content,
-            timestamp: item.timestamp,
-            isRead: item.isRead,
-            priority: item.priority,
-            actionLink: item.actionLink
-          }));
-    },
-    resetOnError: false,
-  });
+  const notifications = useNotificationsStore();
+  const [query, setQuery] = useState("");
+  const [readFilter, setReadFilter] = useState<"all" | "read" | "unread">("all");
 
-  const latest = resource.data[0];
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return notifications.notifications.filter((item) => {
+      const readPass =
+        readFilter === "all" ? true : readFilter === "read" ? item.isRead : !item.isRead;
+      const queryPass = !q
+        ? true
+        : [item.content, item.type, item.priority].join(" ").toLowerCase().includes(q);
+      return readPass && queryPass;
+    });
+  }, [notifications.notifications, query, readFilter]);
+
+  const latest = filtered[0];
 
   return (
     <div className="space-y-6 pb-24 xl:pb-6">
-      <ResourceNote error={resource.error} loading={resource.loading} fallbackLabel="notifications" />
-      <NotificationFilters />
+      <ResourceNote
+        error=""
+        loading={notifications.loading}
+        fallbackLabel="notifications"
+      />
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search notifications"
+        />
+        <Select
+          value={readFilter}
+          onChange={(event) => setReadFilter(event.target.value as "all" | "read" | "unread")}
+        >
+          <option value="all">All notifications</option>
+          <option value="unread">Unread only</option>
+          <option value="read">Read only</option>
+        </Select>
+      </div>
+
       <GenericTable
         title="Notifications"
         description="Operational alerts and system updates."
-        headers={["Type", "Message", "Time", "Read", "Priority", "Action"]}
-        rows={resource.data.map((notification) => [
+        headers={["Type", "Message", "Time", "Read", "Priority", "Actions"]}
+        rows={filtered.map((notification) => [
           notification.type,
           notification.content,
           notification.timestamp,
           notification.isRead ? "Read" : "Unread",
           notification.priority,
-          "View"
+          <div key={notification.id} className="flex gap-2">
+            <Button
+              variant="secondary"
+              className="px-3 py-2 text-xs"
+              onClick={() => void notifications.markRead(notification.id)}
+              disabled={notification.isRead}
+            >
+              Mark read
+            </Button>
+            <Button
+              variant="danger"
+              className="px-3 py-2 text-xs"
+              onClick={() => void notifications.remove(notification.id)}
+            >
+              Delete
+            </Button>
+          </div>,
         ])}
       />
+
+      <div className="flex justify-end">
+        <Button onClick={() => void notifications.markAllRead()}>
+          Mark All as Read
+        </Button>
+      </div>
+
       {latest ? (
         <DetailCard
           title="Latest Notification"
@@ -86,7 +94,7 @@ export function NotificationsApiWorkspace() {
             { label: "Type", value: latest.type },
             { label: "Content", value: latest.content },
             { label: "Priority", value: latest.priority },
-            { label: "Timestamp", value: latest.timestamp }
+            { label: "Timestamp", value: latest.timestamp },
           ]}
         />
       ) : null}

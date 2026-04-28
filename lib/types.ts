@@ -126,3 +126,37 @@ export interface User {
 }
 
 export type CurrentUser = ApiResponse<User>;
+
+export interface DashboardOverviewCards {
+  ordersCount: number;
+  menuCount: number;
+  unreadMessages: number;
+  unreadNotifications: number;
+  totalSales: number;
+}
+
+export interface TrafficDay {
+  day: string;
+  count: number;
+}
+
+export interface TrafficSummary {
+  days: TrafficDay[];
+  trend: string;
+}
+
+export interface TopLocationApi {
+  city: string;
+  country: string;
+  visitors: number;
+}
+
+export interface DashboardOverviewResponse {
+  cards: DashboardOverviewCards;
+  trafficSummary: TrafficSummary;
+  topSellingItems: any[];
+  recentOrders: any[];
+  recentMessages: any[];
+  notifications: any[];
+  topLocations: TopLocationApi[];
+}

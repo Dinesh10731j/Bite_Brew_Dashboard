@@ -1,53 +1,55 @@
 "use client";
+
 import { dashboardApi } from "@/lib/api/dashboard";
-import { getAccessToken } from "@/lib/auth";
 import { useBackendResource } from "@/hooks/useBackendResource";
-import {
-  messages as fallbackMessages,
-  notifications as fallbackNotifications,
-  orders as fallbackOrders,
-  overviewMetrics,
-  topLocations,
-  topSellingItems,
-  trafficSummary,
-} from "@/lib/mock-data";
-import { findArrayData, normalizeMessage, normalizeOrder, unwrapApiData } from "@/lib/dashboard-normalizers";
+import { normalizeMessage, normalizeOrder, unwrapApiData } from "@/lib/dashboard-normalizers";
+
+type DashboardView = {
+  metrics: { label: string; value: string; delta: string }[];
+  trafficSummary: { label: string; visitors: number; orders: number; revenue: number }[];
+  recentOrders: ReturnType<typeof normalizeOrder>[];
+  topSellingItems: { name?: string; orders?: number; revenue?: string }[];
+  topLocations: { place?: string; visitors?: number }[];
+  notifications: {
+    id: string;
+    type: "order" | "message" | "system";
+    content: string;
+    timestamp: string;
+    isRead: boolean;
+    priority: "high" | "medium" | "low";
+    actionLink: string;
+  }[];
+  recentMessages: ReturnType<typeof normalizeMessage>[];
+};
 
 async function fetchOverview(limit = 5) {
-  const token = getAccessToken();
-  return dashboardApi.getDashboardOverview(token, { limit });
+  return dashboardApi.getDashboardOverview({ limit });
 }
 
 export function useDashboard() {
-  const resource = useBackendResource({
+  const resource = useBackendResource<DashboardView>({
     fallback: {
-      metrics: overviewMetrics,
-      trafficSummary,
-      recentOrders: fallbackOrders.slice(0, 5),
-      topSellingItems,
-      topLocations,
-      notifications: fallbackNotifications.slice(0, 5),
-      recentMessages: fallbackMessages.slice(0, 5),
+      metrics: [
+        { label: "Orders", value: "0", delta: "Live" },
+        { label: "Menu Items", value: "0", delta: "Live" },
+        { label: "Unread Messages", value: "0", delta: "Live" },
+        { label: "Notifications", value: "0", delta: "Live" },
+        { label: "Total Sales", value: "NPR 0", delta: "Live" },
+      ],
+      trafficSummary: [],
+      recentOrders: [],
+      topSellingItems: [],
+      topLocations: [],
+      notifications: [],
+      recentMessages: [],
     },
     loader: async () => {
-      const token = getAccessToken();
-      const [overviewResponse, messagesResponse, notificationsResponse, analyticsResponse] = await Promise.all([
-        fetchOverview(5),
-        dashboardApi.getMessages(token, { page: 1, limit: 5 }),
-        dashboardApi.getNotifications(token, { page: 1, limit: 5 }),
-        dashboardApi.getAnalyticsSummary(token, { days: 7 }),
-      ]);
+      const response = await fetchOverview(5);
+      const overviewData: any = unwrapApiData(response) ?? {};
 
-      const overviewData: any = unwrapApiData(overviewResponse) ?? {};
       const cards = overviewData?.cards ?? {};
-      const recentOrders = Array.isArray(overviewData?.recentOrders)
-        ? overviewData.recentOrders.map(normalizeOrder)
-        : fallbackOrders.slice(0, 5);
-
-      const analyticsData: any = unwrapApiData(analyticsResponse) ?? {};
-      const dailyVisits = Array.isArray(analyticsData?.dailyVisits) ? analyticsData.dailyVisits : [];
-      const messagesData = findArrayData(messagesResponse);
-      const notificationsData = findArrayData(notificationsResponse);
+      const trafficData = overviewData?.trafficSummary ?? {};
+      const trafficDays = Array.isArray(trafficData?.days) ? trafficData.days : [];
 
       return {
         metrics: [
@@ -57,34 +59,48 @@ export function useDashboard() {
           { label: "Notifications", value: String(Number(cards?.unreadNotifications ?? 0)), delta: "Live" },
           { label: "Total Sales", value: `NPR ${Number(cards?.totalSales ?? 0).toLocaleString()}`, delta: "Live" },
         ],
-        trafficSummary: dailyVisits.length
-          ? dailyVisits.map((item: any) => ({
-              label: item?.day ? new Date(item.day).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "-",
-              visitors: Number(item?.count ?? 0),
-              orders: 0,
-              revenue: 0,
+        trafficSummary: trafficDays.map((item: any) => ({
+          label: item?.day ? new Date(item.day).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "-",
+          visitors: Number(item?.count ?? 0),
+          orders: 0,
+          revenue: 0,
+        })),
+        recentOrders: Array.isArray(overviewData?.recentOrders)
+          ? overviewData.recentOrders.map(normalizeOrder)
+          : [],
+        topSellingItems: Array.isArray(overviewData?.topSellingItems)
+          ? overviewData.topSellingItems.map((item: any) => ({
+              name: item?.name ?? item?.menuItem?.name ?? "Item",
+              orders: item?.orders ? Number(item.orders) : undefined,
+              revenue: item?.revenue ? `NPR ${Number(item.revenue).toLocaleString()}` : undefined,
+              price: item?.price ? `NPR ${Number(item.price).toLocaleString()}` : undefined,
             }))
-          : trafficSummary,
-        recentOrders,
-        topSellingItems,
-        topLocations,
-        notifications: notificationsData
-          ? notificationsData.slice(0, 5).map((item: any) => ({
-              id: item?.id ?? item?._id ?? "NOT-1",
+          : [],
+        topLocations: Array.isArray(overviewData?.topLocations)
+          ? overviewData.topLocations.map((item: any) => ({
+              place: item?.city && item?.country && item.city !== "Unknown"
+                ? `${item.city}, ${item.country}`
+                : item?.city ?? item?.country ?? "Unknown",
+              visitors: Number(item?.visitors ?? 0),
+            }))
+          : [],
+        notifications: Array.isArray(overviewData?.notifications)
+          ? overviewData.notifications.slice(0, 5).map((item: any) => ({
+              id: item?.id ?? item?._id ?? "",
               type: String(item?.type ?? "SYSTEM").toLowerCase() as "order" | "message" | "system",
               content: item?.content ?? "",
               timestamp: item?.createdAt ? new Date(item.createdAt).toLocaleString() : "-",
               isRead: Boolean(item?.isRead),
               priority: String(item?.priority ?? "MEDIUM").toLowerCase() as "high" | "medium" | "low",
               actionLink: item?.actionLink ?? "#",
-          }))
-          : fallbackNotifications.slice(0, 5),
-        recentMessages: messagesData
-          ? messagesData.slice(0, 5).map(normalizeMessage)
-          : fallbackMessages.slice(0, 5),
+            }))
+          : [],
+        recentMessages: Array.isArray(overviewData?.recentMessages)
+          ? overviewData.recentMessages.slice(0, 5).map(normalizeMessage)
+          : [],
       };
     },
-    resetOnError: false,
+    resetOnError: true,
   });
 
   return resource;

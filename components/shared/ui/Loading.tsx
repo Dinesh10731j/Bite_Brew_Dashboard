@@ -1,8 +1,5 @@
+import { PremiumLoader } from "@/components/shared/ui/PremiumLoader";
+
 export function Loading() {
-  return (
-    <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-300">
-      <span className="h-3 w-3 animate-pulse rounded-full bg-brand" />
-      Loading dashboard data...
-    </div>
-  );
+  return <PremiumLoader label="Loading dashboard data..." />;
 }

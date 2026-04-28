@@ -11,12 +11,11 @@ import { Button } from "@/components/shared/ui/Button";
 type OrdersTableProps = {
   data: Order[];
   onEdit: (order: Order) => void;
-  onDelete: (order: Order) => void;
   onStatusChange: (order: Order, status: Order["orderStatus"]) => void;
   busy?: boolean;
 };
 
-export function OrdersTable({ data, onEdit, onDelete, onStatusChange, busy = false }: OrdersTableProps) {
+export function OrdersTable({ data, onEdit, onStatusChange, busy = false }: OrdersTableProps) {
   return (
     <GenericTable
       title="Orders"
@@ -24,7 +23,7 @@ export function OrdersTable({ data, onEdit, onDelete, onStatusChange, busy = fal
       headers={["Order", "Customer", "Items", "Total", "Type", "Payment", "Status", "Actions"]}
       rows={data.map((order) => [
         order.id,
-        `${order.customerName} • ${order.phone}`,
+        `${order.customerName} - ${order.phone}`,
         order.itemsOrdered,
         formatCurrency(order.totalPrice),
         order.orderType,
@@ -48,9 +47,6 @@ export function OrdersTable({ data, onEdit, onDelete, onStatusChange, busy = fal
         <div key={`${order.id}-actions`} className="flex gap-2">
           <Button variant="secondary" className="px-3 py-2 text-xs" onClick={() => onEdit(order)} disabled={busy}>
             Edit
-          </Button>
-          <Button variant="danger" className="px-3 py-2 text-xs" onClick={() => onDelete(order)} disabled={busy}>
-            Delete
           </Button>
         </div>,
       ])}

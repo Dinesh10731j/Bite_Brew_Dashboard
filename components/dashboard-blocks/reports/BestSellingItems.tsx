@@ -1,6 +1,5 @@
-import { InsightList } from "@/components/dashboard-blocks/common";
-import { topSellingItems } from "@/lib/mock-data";
+import { Empty } from "@/components/shared/ui/Empty";
 
 export function BestSellingItems() {
-  return <InsightList items={topSellingItems} valueLabel="orders" />;
+  return <Empty title="No Best Sellers" description="Backend did not return best-selling items yet." />;
 }

@@ -1,25 +1,22 @@
 "use client";
 
-import { useQuery } from '@tanstack/react-query';
-import { dashboardApi } from '@/lib/api/dashboard';
-import { canAccessDashboard, getAccessToken } from '@/lib/auth';
-import type { CurrentUser } from '@/lib/types';
+import { useQuery } from "@tanstack/react-query";
+import { dashboardApi } from "@/lib/api/dashboard";
+import { canAccessDashboard } from "@/lib/auth";
+import type { CurrentUser } from "@/lib/types";
 
 export function useCurrentUser() {
   const query = useQuery({
-    queryKey: ['currentUser'],
+    queryKey: ["currentUser"],
     queryFn: async (): Promise<CurrentUser> => {
-      const token = getAccessToken();
-      if (!token) {
-        throw new Error("Missing access token");
-      }
-      return dashboardApi.getCurrentUser(token) as Promise<CurrentUser>;
+      return dashboardApi.getCurrentUser() as Promise<CurrentUser>;
     },
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 min
+    staleTime: 5 * 60 * 1000,
   });
 
-  const isAllowed = canAccessDashboard(query.data?.data.role ?? null);
+  const role = query.data?.data?.role ?? null;
+  const isAllowed = canAccessDashboard(role);
 
   return {
     ...query,

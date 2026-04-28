@@ -2,10 +2,14 @@ import Image from "next/image";
 import type { MenuItem as MenuItemType } from "@/lib/types";
 import { Badge } from "@/components/shared/ui/Badge";
 import { Card } from "@/components/shared/ui/Card";
-import { menuItems } from "@/lib/mock-data";
 import { formatCurrency } from "@/lib/utils";
+import { Empty } from "@/components/shared/ui/Empty";
 
-export function MenuItem({ items = menuItems }: { items?: MenuItemType[] }) {
+export function MenuItem({ items = [] }: { items?: MenuItemType[] }) {
+  if (!items.length) {
+    return <Empty title="No Menu Items" description="No menu items were returned by backend yet." />;
+  }
+
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {items.map((item) => (

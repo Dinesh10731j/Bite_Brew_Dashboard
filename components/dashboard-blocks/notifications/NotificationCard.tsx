@@ -1,17 +1,5 @@
-import { DetailCard } from "@/components/dashboard-blocks/common";
-import { notifications } from "@/lib/mock-data";
+import { Empty } from "@/components/shared/ui/Empty";
 
 export function NotificationCard() {
-  const notification = notifications[0];
-  return (
-    <DetailCard
-      title="Latest Notification"
-      items={[
-        { label: "Type", value: notification.type },
-        { label: "Content", value: notification.content },
-        { label: "Priority", value: notification.priority },
-        { label: "Timestamp", value: notification.timestamp }
-      ]}
-    />
-  );
+  return <Empty title="No Static Notification" description="Use live notification feed from backend." />;
 }

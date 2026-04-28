@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useBackendResource } from "@/hooks/useBackendResource";
 import { dashboardApi } from "@/lib/api/dashboard";
-import { getAccessToken } from "@/lib/auth";
 import { normalizeAnalyticsSummary, type AnalyticsSummaryView } from "@/lib/dashboard-normalizers";
 
 const fallbackSummary: AnalyticsSummaryView = {
@@ -22,8 +21,7 @@ export function useAnalytics(days = 7) {
   const resource = useBackendResource<AnalyticsSummaryView>({
     fallback: fallbackSummary,
     loader: async () => {
-      const token = getAccessToken();
-      const response: any = await dashboardApi.getAnalyticsSummary(token, { days });
+      const response: any = await dashboardApi.getAnalyticsSummary({ days });
       return normalizeAnalyticsSummary(response, days);
     },
     resetOnError: false,

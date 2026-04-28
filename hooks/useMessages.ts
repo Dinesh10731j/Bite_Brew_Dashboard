@@ -4,8 +4,6 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useBackendResource } from "@/hooks/useBackendResource";
 import { dashboardApi } from "@/lib/api/dashboard";
-import { getAccessToken } from "@/lib/auth";
-import { messages as fallbackMessages } from "@/lib/mock-data";
 import { findArrayData, normalizeMessage } from "@/lib/dashboard-normalizers";
 import type { Message } from "@/lib/types";
 
@@ -13,13 +11,12 @@ export function useMessages() {
   const [query, setQuery] = useState("");
 
   const resource = useBackendResource<Message[]>({
-    fallback: fallbackMessages,
-    resetOnError: false,
+    fallback: [],
+    resetOnError: true,
     loader: async () => {
-      const token = getAccessToken();
-      const response: any = await dashboardApi.getMessages(token, { page: 1, limit: 50 });
+      const response: any = await dashboardApi.getMessages({ page: 1, limit: 50 });
       const items = findArrayData(response);
-      return items ? items.map(normalizeMessage) : fallbackMessages;
+      return items ? items.map(normalizeMessage) : [];
     },
   });
 
@@ -37,13 +34,12 @@ export function useMessages() {
 
   const toggleRead = useCallback(
     async (message: Message) => {
-      const token = getAccessToken();
       const nextRead = !message.isRead;
       const targetId = message.backendId ?? message.id;
 
       await resource.runMutation(
         async () => {
-          const response: any = await dashboardApi.markMessageRead(targetId, token, nextRead);
+          const response: any = await dashboardApi.markMessageRead(targetId, nextRead);
           const payload = response?.data ?? { ...message, isRead: nextRead };
           return normalizeMessage(payload);
         },
@@ -63,11 +59,10 @@ export function useMessages() {
 
   const deleteMessage = useCallback(
     async (message: Message) => {
-      const token = getAccessToken();
       const targetId = message.backendId ?? message.id;
 
       await resource.runMutation(
-        () => dashboardApi.deleteMessage(targetId, token),
+        () => dashboardApi.deleteMessage(targetId),
         {
           optimisticData: (current) => current.filter((entry) => entry.id !== message.id),
           onError: (error) => toast.error(error.message),
