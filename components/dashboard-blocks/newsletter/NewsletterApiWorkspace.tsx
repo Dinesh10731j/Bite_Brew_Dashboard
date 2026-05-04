@@ -39,7 +39,6 @@ export function NewsletterApiWorkspace() {
       const response = await dashboardApi.getNewsletterSubscribers({ page: 1, limit: 100 });
       return extractList<any>(response).map(normalizeSubscriber);
     },
-    refetchInterval: 10000,
   });
 
   const campaignMutation = useMutation({

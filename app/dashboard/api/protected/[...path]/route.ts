@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { TOKEN_COOKIE } from "@/lib/auth";
 
-const BACKEND_BASE_URL = "http://localhost:7000/api/v1/bite-brew";
+const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BITE_BREW_API_URL ?? "http://localhost:7000/api/v1/bite-brew";
 
 type RouteContext = {
   params: Promise<{
@@ -78,7 +78,7 @@ async function handleProxy(request: Request, context: RouteContext) {
 
   let body: BodyInit | undefined;
   if (request.method !== "GET" && request.method !== "HEAD") {
-    body = await request.text();
+    body = await request.arrayBuffer();
   }
 
   try {
@@ -95,16 +95,24 @@ async function handleProxy(request: Request, context: RouteContext) {
       cache: "no-store",
     });
 
+    const responseHeaders = new Headers();
+    response.headers.forEach((value, key) => {
+      if (key.toLowerCase() === "set-cookie") {
+        responseHeaders.append(key, value);
+      }
+    });
+
     const contentType = response.headers.get("content-type") ?? "";
     if (contentType.includes("application/json")) {
       const json = await response.json();
-      return NextResponse.json(json, { status: response.status });
+      return NextResponse.json(json, { status: response.status, headers: responseHeaders });
     }
 
     const text = await response.text();
+    if (contentType) responseHeaders.set("content-type", contentType);
     return new NextResponse(text, {
       status: response.status,
-      headers: contentType ? { "content-type": contentType } : undefined,
+      headers: responseHeaders,
     });
   } catch {
     return NextResponse.json({ message: "Failed to proxy backend request" }, { status: 500 });

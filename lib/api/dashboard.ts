@@ -90,21 +90,20 @@ export const dashboardApi = {
 
   getOrders: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
     apiService.orders.list(normalizeQuery(tokenOrParams, params)),
+  createOrder: (body: Record<string, unknown>) => apiService.orders.create(body),
   getOrderById: (id: string) => apiService.orders.detail(id),
-  updateOrder: (id: string, tokenOrBody: string | Record<string, unknown>, maybeBody?: Record<string, unknown>) =>
-    apiService.orders.update(id, typeof tokenOrBody === "string" ? (maybeBody ?? {}) : tokenOrBody),
   updateOrderStatus: (id: string, tokenOrStatus: string | OrderStatus, maybeStatus?: OrderStatus) =>
     apiService.orders.updateStatus(id, (maybeStatus ?? tokenOrStatus) as string),
 
   createMessage: (body: { senderName: string; content: string; phone?: string; email?: string; source?: string }) =>
-    Promise.resolve(body),
+    apiService.messages.create(body),
   getMessages: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
     apiService.messages.list(normalizeQuery(tokenOrParams, params)),
   markMessageRead: (id: string, tokenOrRead?: string | boolean, maybeRead?: boolean) =>
     apiService.messages.markRead(id, typeof tokenOrRead === "boolean" ? tokenOrRead : (maybeRead ?? true)),
   deleteMessage: (id: string) => apiService.messages.remove(id),
 
-  subscribeNewsletter: (email: string) => Promise.resolve({ email }),
+  subscribeNewsletter: (email: string) => apiService.newsletter.subscribe(email),
   getNewsletterSubscribers: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
     apiService.newsletter.list(normalizeQuery(tokenOrParams, params)),
   sendNewsletterCampaign: (tokenOrBody: string | NewsletterCampaignBody, maybeBody?: NewsletterCampaignBody) =>
@@ -114,7 +113,7 @@ export const dashboardApi = {
   deleteNewsletterSubscriber: (id: string) => apiService.newsletter.remove(id),
 
   createNotification: (tokenOrBody: string | Record<string, unknown>, maybeBody?: Record<string, unknown>) =>
-    Promise.resolve(typeof tokenOrBody === "string" ? maybeBody : tokenOrBody),
+    apiService.notifications.create((typeof tokenOrBody === "string" ? maybeBody : tokenOrBody) ?? {}),
   getNotifications: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
     apiService.notifications.list(normalizeQuery(tokenOrParams, params)),
   markNotificationRead: (id: string, tokenOrRead?: string | boolean, maybeRead?: boolean) =>
@@ -143,4 +142,6 @@ export const dashboardApi = {
     apiService.analytics.summary(typeof tokenOrParams === "string" ? params : tokenOrParams),
   getSalesReport: (tokenOrParams?: string | { from?: string; to?: string }, params?: { from?: string; to?: string }) =>
     apiService.reports.sales(typeof tokenOrParams === "string" ? params : tokenOrParams),
+  getActivityLogs: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
+    apiService.activityLogs.list(normalizeQuery(tokenOrParams, params)),
 };

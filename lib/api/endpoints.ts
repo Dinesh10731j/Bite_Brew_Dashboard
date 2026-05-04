@@ -1,4 +1,4 @@
-const base = "http://localhost:7000/api/v1/bite-brew";
+const base = process.env.NEXT_PUBLIC_BITE_BREW_API_URL ?? "http://localhost:7000/api/v1/bite-brew";
 
 export const apiEndpoints = {
   health: `${base}/health`,

@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { X } from "lucide-react";
 import { Coffee, LogOut } from "lucide-react";
 import { Card } from "@/components/shared/ui/Card";
@@ -17,10 +19,16 @@ type SidebarProps = {
 
 export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }: SidebarProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const handleLogout = async () => {
     try {
       await dashboardApi.logout();
+      queryClient.clear();
+      toast.success("Logout successful");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Logout failed");
+      queryClient.clear();
     } finally {
       onCloseMobile?.();
       router.replace("/login");

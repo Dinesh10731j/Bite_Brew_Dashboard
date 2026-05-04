@@ -11,6 +11,7 @@ export type CreateOrderPayload = {
   customerName: string;
   phone: string;
   email: string;
+  menuItemId: string;
   itemName: string;
   quantity: number;
   orderType: Order["orderType"];
@@ -29,7 +30,7 @@ export function AddOrderForm({ catalog, onAdd, loading = false }: AddOrderFormPr
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [selectedItem, setSelectedItem] = useState(catalog[0]?.name ?? "");
+  const [selectedItemId, setSelectedItemId] = useState(catalog[0]?.id ?? "");
   const [quantity, setQuantity] = useState("1");
   const [orderType, setOrderType] = useState<Order["orderType"]>("dine-in");
   const [paymentMethod, setPaymentMethod] = useState<Order["paymentMethod"]>("cash");
@@ -37,15 +38,15 @@ export function AddOrderForm({ catalog, onAdd, loading = false }: AddOrderFormPr
   const [deliveryAddress, setDeliveryAddress] = useState("");
 
   const selectedCatalogItem = useMemo(
-    () => catalog.find((entry) => entry.name === selectedItem) ?? catalog[0],
-    [catalog, selectedItem]
+    () => catalog.find((entry) => entry.id === selectedItemId) ?? catalog[0],
+    [catalog, selectedItemId]
   );
 
   useEffect(() => {
-    if (!selectedItem && catalog[0]?.name) {
-      setSelectedItem(catalog[0].name);
+    if (!selectedItemId && catalog[0]?.id) {
+      setSelectedItemId(catalog[0].id);
     }
-  }, [catalog, selectedItem]);
+  }, [catalog, selectedItemId]);
 
   const handleSubmit = async () => {
     if (!selectedCatalogItem) return;
@@ -55,6 +56,7 @@ export function AddOrderForm({ catalog, onAdd, loading = false }: AddOrderFormPr
       customerName: customerName || "Walk-in Customer",
       phone: phone || "-",
       email: email || "-",
+      menuItemId: selectedCatalogItem.id,
       itemName: selectedCatalogItem.name,
       quantity: qty,
       orderType,
@@ -83,35 +85,35 @@ export function AddOrderForm({ catalog, onAdd, loading = false }: AddOrderFormPr
       }
     >
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        <Input placeholder="Customer name" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-        <Input placeholder="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} />
-        <Input placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} />
-        <Select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
-          {catalog.map((item) => (
-            <option key={item.id} value={item.name}>
+        <Input placeholder="Customer name" value={customerName} onChange={(event) => setCustomerName(event.target.value)} />
+        <Input placeholder="Phone number" value={phone} onChange={(event) => setPhone(event.target.value)} />
+        <Input placeholder="Email address" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <Select value={selectedItemId} onChange={(event) => setSelectedItemId(event.target.value)}>
+          {catalog.map((item, index) => (
+            <option key={`${item.id}-${index}`} value={item.id}>
               {item.name}
             </option>
           ))}
         </Select>
-        <Input placeholder="Quantity" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-        <Select value={orderType} onChange={(e) => setOrderType(e.target.value as Order["orderType"])}>
+        <Input placeholder="Quantity" value={quantity} onChange={(event) => setQuantity(event.target.value)} />
+        <Select value={orderType} onChange={(event) => setOrderType(event.target.value as Order["orderType"])}>
           <option value="dine-in">Dine-in</option>
           <option value="takeaway">Takeaway</option>
           <option value="delivery">Delivery</option>
         </Select>
-        <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as Order["paymentMethod"])}>
+        <Select value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as Order["paymentMethod"])}>
           <option value="cash">Cash</option>
           <option value="eSewa">eSewa</option>
           <option value="Khalti">Khalti</option>
         </Select>
         {orderType === "dine-in" && (
-          <Input placeholder="Table number" value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} />
+          <Input placeholder="Table number" value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} />
         )}
         {orderType === "delivery" && (
           <Input
             placeholder="Delivery address"
             value={deliveryAddress}
-            onChange={(e) => setDeliveryAddress(e.target.value)}
+            onChange={(event) => setDeliveryAddress(event.target.value)}
             className="md:col-span-2"
           />
         )}

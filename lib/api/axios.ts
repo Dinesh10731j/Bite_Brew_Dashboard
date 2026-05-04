@@ -1,7 +1,7 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { apiEndpoints } from './endpoints';
 
-const BASE_URL = 'http://localhost:7000/api/v1/bite-brew';
+const BASE_URL = process.env.NEXT_PUBLIC_BITE_BREW_API_URL ?? 'http://localhost:7000/api/v1/bite-brew';
 
 const axiosInstance: AxiosInstance = axios.create({
   baseURL: BASE_URL,

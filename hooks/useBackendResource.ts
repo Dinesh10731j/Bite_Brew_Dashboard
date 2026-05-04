@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
+import { usePathname } from "next/navigation";
 
 type MutationOptions<TData, TResult> = {
   optimisticData?: TData | ((current: TData) => TData);
@@ -45,10 +46,16 @@ export function useBackendResource<TData>({
   const mountedRef = useRef(true);
   const initialLoadRef = useRef(true);
   const loaderRef = useRef(loader);
+  const fallbackRef = useRef(fallback);
+  const pathname = usePathname();
 
   useEffect(() => {
     loaderRef.current = loader;
   }, [loader]);
+
+  useEffect(() => {
+    fallbackRef.current = fallback;
+  }, [fallback]);
 
   useEffect(() => {
     return () => {
@@ -73,15 +80,16 @@ export function useBackendResource<TData>({
       if (!mountedRef.current) return;
       setError(err instanceof Error ? err.message : "Unable to load data.");
       if (resetOnError) {
-        setData(fallback);
+        setData(fallbackRef.current);
       }
     } finally {
-      if (!mountedRef.current) return;
       initialLoadRef.current = false;
-      setLoading(false);
-      setRefreshing(false);
+      if (mountedRef.current) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [enabled, fallback, resetOnError]);
+  }, [enabled, resetOnError]);
 
   useEffect(() => {
     if (!enabled) {
@@ -89,7 +97,7 @@ export function useBackendResource<TData>({
       return;
     }
     void refresh();
-  }, [enabled, refresh]);
+  }, [enabled, pathname, refresh]);
 
   const runMutation = useCallback(
     async <TResult>(action: () => Promise<TResult>, options: MutationOptions<TData, TResult> = {}) => {

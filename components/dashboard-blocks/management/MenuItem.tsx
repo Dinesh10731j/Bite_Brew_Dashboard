@@ -12,8 +12,8 @@ export function MenuItem({ items = [] }: { items?: MenuItemType[] }) {
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {items.map((item) => (
-        <Card key={item.id} className="overflow-hidden p-0">
+      {items.map((item, index) => (
+        <Card key={`${item.id || item.name}-${index}`} className="overflow-hidden p-0">
           <div className="relative h-44">
             <Image src={item.image} alt={item.name} fill className="object-cover" unoptimized />
           </div>

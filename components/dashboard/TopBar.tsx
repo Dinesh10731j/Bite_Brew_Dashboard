@@ -15,6 +15,14 @@ type TopBarProps = {
 
 export function TopBar({ sidebarCollapsed, onToggleSidebar, onOpenMobileSidebar }: TopBarProps) {
   const notifications = useNotificationsStore();
+  const toggleNotifications = () => {
+    const nextOpen = !notifications.isOpen;
+    notifications.setIsOpen(nextOpen);
+
+    if (nextOpen && notifications.unreadCount > 0) {
+      void notifications.markAllRead();
+    }
+  };
 
   return (
     <header className="sticky top-0 z-30 rounded-3xl border border-white/50 bg-white/75 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-[#0d1412]/75">
@@ -56,7 +64,7 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar, onOpenMobileSidebar 
 
           <div className="relative">
             <button
-              onClick={() => notifications.setIsOpen(!notifications.isOpen)}
+              onClick={toggleNotifications}
               className="relative rounded-2xl border border-brand/15 bg-white p-3 dark:border-white/10 dark:bg-white/5"
               aria-label="Notifications"
             >

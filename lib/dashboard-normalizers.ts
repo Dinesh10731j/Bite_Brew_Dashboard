@@ -72,6 +72,17 @@ function normalizedOrderStatus(value: unknown): Order["orderStatus"] {
   return orderStatusMap[raw] ?? "pending";
 }
 
+export function normalizeBoolean(value: unknown, fallback = false): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "read"].includes(normalized)) return true;
+    if (["false", "0", "no", "unread", ""].includes(normalized)) return false;
+  }
+  return fallback;
+}
+
 export function normalizeOrder(item: any): Order {
   const status = normalizedOrderStatus(item?.status ?? item?.orderStatus);
   const paymentMethodRaw = String(item?.paymentMethod ?? "cash").toLowerCase();
@@ -124,7 +135,7 @@ export function normalizeMessage(item: any): Message {
     email: item?.email ?? "-",
     content: item?.content ?? "",
     timestamp: item?.createdAt ? new Date(item.createdAt).toLocaleString() : "-",
-    isRead: Boolean(item?.isRead),
+    isRead: normalizeBoolean(item?.isRead ?? item?.read),
     replyStatus: item?.replyStatus === "replied" ? "replied" : "pending",
     source: item?.source ?? "Website form",
   };

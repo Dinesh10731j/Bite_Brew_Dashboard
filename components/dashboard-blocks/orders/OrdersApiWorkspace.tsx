@@ -1,36 +1,62 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { useOrders } from "@/hooks/useOrders";
-import { Modal } from "@/components/shared/ui/Modal";
-import { Input } from "@/components/shared/ui/Input";
-import { Button } from "@/components/shared/ui/Button";
+import { useRealtimeResourceRefresh } from "@/hooks/useRealtimeUpdates";
 import type { Order } from "@/lib/types";
+import { dashboardApi } from "@/lib/api/dashboard";
+import { extractList } from "@/services/api/http";
 
+//import { AddOrderForm, type CreateOrderPayload } from "./AddOrderForm";
 import { OrderFilters } from "./OrderFilters";
 import { OrdersTable } from "./OrdersTable";
 
+function normalizeCatalogItem(item: any) {
+  return {
+    id: item?.id ?? item?._id ?? "",
+    name: item?.name ?? "Menu item",
+    price: Number(item?.price ?? 0),
+  };
+}
+
 export function OrdersApiWorkspace() {
   const [statusFilter, setStatusFilter] = useState<"all" | Order["orderStatus"]>("all");
-  const [editOrder, setEditOrder] = useState<Order | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editPhone, setEditPhone] = useState("");
-  const [editEmail, setEditEmail] = useState("");
 
   const orders = useOrders();
+  useRealtimeResourceRefresh(["orders"], orders.refresh);
+
+  const catalogQuery = useQuery({
+    queryKey: ["menu-items", "orders-catalog"],
+    queryFn: async () => {
+      const response = await dashboardApi.getMenuItems({ page: 1, limit: 100, available: true });
+      return extractList<any>(response).map(normalizeCatalogItem).filter((item) => item.id);
+    },
+  });
+
+  // const createOrderMutation = useMutation({
+  //   mutationFn: async (payload: CreateOrderPayload) => {
+  //     await dashboardApi.createOrder({
+  //       customerName: payload.customerName,
+  //       phone: payload.phone,
+  //       email: payload.email,
+  //       tableNumber: payload.tableNumber,
+  //       deliveryAddress: payload.deliveryAddress,
+  //       orderType: payload.orderType,
+  //       paymentMethod: payload.paymentMethod,
+  //       items: [{ menuItemId: payload.menuItemId, quantity: payload.quantity }],
+  //     });
+  //   },
+  //   onSuccess: async () => {
+  //     await orders.refresh();
+  //   },
+  // });
 
   const filteredOrders = useMemo(() => {
     if (statusFilter === "all") return orders.filteredOrders;
     return orders.filteredOrders.filter((entry) => entry.orderStatus === statusFilter);
   }, [orders.filteredOrders, statusFilter]);
-
-  const openEdit = (order: Order) => {
-    setEditOrder(order);
-    setEditName(order.customerName);
-    setEditPhone(order.phone);
-    setEditEmail(order.email);
-  };
 
   return (
     <div className="space-y-6">
@@ -47,41 +73,17 @@ export function OrdersApiWorkspace() {
         onStatusChange={setStatusFilter}
       />
 
+      {/* <AddOrderForm
+        catalog={catalogQuery.data ?? []}
+        loading={createOrderMutation.isPending}
+        onAdd={(payload) => createOrderMutation.mutateAsync(payload)}
+      /> */}
+
       <OrdersTable
         data={filteredOrders}
-        onEdit={openEdit}
         onStatusChange={orders.updateOrderStatus}
         busy={orders.mutating}
       />
-
-      <Modal open={Boolean(editOrder)}>
-        {editOrder && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-brand-ink dark:text-white">Edit Order {editOrder.id}</h3>
-            <Input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="Customer name" />
-            <Input value={editPhone} onChange={(event) => setEditPhone(event.target.value)} placeholder="Phone" />
-            <Input value={editEmail} onChange={(event) => setEditEmail(event.target.value)} placeholder="Email" />
-            <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setEditOrder(null)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={async () => {
-                  await orders.updateOrder(editOrder, {
-                    customerName: editName,
-                    phone: editPhone,
-                    email: editEmail,
-                  });
-                  setEditOrder(null);
-                }}
-                disabled={orders.mutating}
-              >
-                {orders.mutating ? "Saving..." : "Save Changes"}
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 }

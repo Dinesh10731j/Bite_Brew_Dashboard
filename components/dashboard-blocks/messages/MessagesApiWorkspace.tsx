@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMessages } from "@/hooks/useMessages";
+import { useRealtimeResourceRefresh } from "@/hooks/useRealtimeUpdates";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { Modal } from "@/components/shared/ui/Modal";
 import { Button } from "@/components/shared/ui/Button";
@@ -17,6 +18,7 @@ export function MessagesApiWorkspace() {
   const [deleteTarget, setDeleteTarget] = useState<Message | null>(null);
 
   const messages = useMessages();
+  useRealtimeResourceRefresh(["messages"], messages.refresh);
 
   const filtered = useMemo(() => {
     if (readFilter === "all") return messages.filteredMessages;

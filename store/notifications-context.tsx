@@ -1,17 +1,11 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { extractList } from "@/services/api/http";
+import { normalizeBoolean } from "@/lib/dashboard-normalizers";
 
 type NotificationItem = {
   id: string;
@@ -43,7 +37,7 @@ function normalizeNotification(item: any): NotificationItem {
     type: String(item?.type ?? "SYSTEM"),
     content: item?.content ?? "",
     timestamp: item?.createdAt ? new Date(item.createdAt).toLocaleString() : "-",
-    isRead: Boolean(item?.isRead),
+    isRead: normalizeBoolean(item?.isRead ?? item?.read),
     priority: String(item?.priority ?? "MEDIUM"),
     actionLink: item?.actionLink ?? "#",
   };
@@ -61,7 +55,6 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const query = useQuery({
     queryKey: ["notifications"],
     queryFn: fetchNotifications,
-    refetchInterval: 8000,
     staleTime: 4000,
   });
 
@@ -84,6 +77,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       }
       toast.error("Failed to mark notification as read");
     },
+    onSuccess: () => {
+      toast.success("Notification marked as read");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
   });
 
   const markAllMutation = useMutation({
@@ -103,6 +102,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         queryClient.setQueryData(["notifications"], context.previous);
       }
       toast.error("Failed to mark all notifications as read");
+    },
+    onSuccess: () => {
+      toast.success("All notifications marked as read");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
   });
 
@@ -124,6 +129,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         queryClient.setQueryData(["notifications"], context.previous);
       }
       toast.error("Failed to delete notification");
+    },
+    onSuccess: () => {
+      toast.success("Notification deleted");
     },
   });
 

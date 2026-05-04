@@ -53,33 +53,11 @@ export function useOrders() {
     [resource]
   );
 
-  const updateOrder = useCallback(
-    async (order: Order, updates: Partial<Pick<Order, "customerName" | "phone" | "email">>) => {
-      const targetId = order.backendId ?? order.id;
-
-      await resource.runMutation(
-        async () => {
-          const response: any = await dashboardApi.updateOrder(targetId, updates);
-          return normalizeOrder(response?.data ?? { ...order, ...updates });
-        },
-        {
-          optimisticData: (current) => current.map((entry) => (entry.id === order.id ? { ...entry, ...updates } : entry)),
-          onSuccess: (updated, current) => current.map((entry) => (entry.id === order.id ? { ...entry, ...updated } : entry)),
-          onError: (error) => toast.error(error.message),
-        }
-      );
-
-      toast.success("Order updated");
-    },
-    [resource]
-  );
-
   return {
     ...resource,
     query,
     setQuery,
     filteredOrders,
     updateOrderStatus,
-    updateOrder,
   };
 }

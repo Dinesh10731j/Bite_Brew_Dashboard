@@ -4,7 +4,11 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
-    if (typeof window !== "undefined" && (status === 401 || status === 403)) {
+    if (
+      typeof window !== "undefined" &&
+      !window.location.pathname.startsWith("/login") &&
+      (status === 401 || status === 403)
+    ) {
       window.dispatchEvent(new CustomEvent("bite-brew:auth-error", { detail: { status } }));
     }
     return Promise.reject(error?.response?.data || { message: error.message });

@@ -1,17 +1,42 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { DetailCard, GenericTable } from "@/components/dashboard-blocks/common";
+import { useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { BlockCard, DetailCard, GenericTable } from "@/components/dashboard-blocks/common";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { Input } from "@/components/shared/ui/Input";
 import { Select } from "@/components/shared/ui/Select";
 import { Button } from "@/components/shared/ui/Button";
 import { useNotificationsStore } from "@/store/notifications-context";
+import { dashboardApi } from "@/lib/api/dashboard";
+import { toast } from "sonner";
 
 export function NotificationsApiWorkspace() {
   const notifications = useNotificationsStore();
   const [query, setQuery] = useState("");
   const [readFilter, setReadFilter] = useState<"all" | "read" | "unread">("all");
+  const notificationForm = useForm({
+    defaultValues: {
+      content: "",
+      type: "SYSTEM",
+      priority: "MEDIUM",
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (values: { content: string; type: string; priority: string }) => {
+      await dashboardApi.createNotification(values);
+    },
+    onSuccess: async () => {
+      notificationForm.reset();
+      await notifications.refresh();
+      toast.success("Notification created");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to create notification");
+    },
+  });
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -50,6 +75,34 @@ export function NotificationsApiWorkspace() {
           <option value="read">Read only</option>
         </Select>
       </div>
+
+      <BlockCard title="Create Notification" description="Create an operational alert for dashboard users.">
+        <form
+          className="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]"
+          onSubmit={notificationForm.handleSubmit((values) => createMutation.mutateAsync(values))}
+        >
+          <Input
+            {...notificationForm.register("content", { required: true, minLength: 2 })}
+            placeholder="Notification content"
+          />
+          <Select {...notificationForm.register("type")}>
+            <option value="SYSTEM">SYSTEM</option>
+            <option value="ORDER">ORDER</option>
+            <option value="MESSAGE">MESSAGE</option>
+          </Select>
+          <Select {...notificationForm.register("priority")}>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="HIGH">HIGH</option>
+            <option value="LOW">LOW</option>
+          </Select>
+          <Button
+            type="submit"
+            disabled={!notificationForm.watch("content").trim() || createMutation.isPending}
+          >
+            {createMutation.isPending ? "Creating..." : "Create"}
+          </Button>
+        </form>
+      </BlockCard>
 
       <GenericTable
         title="Notifications"

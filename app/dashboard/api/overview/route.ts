@@ -73,7 +73,7 @@ export async function GET(request: Request) {
     backendUrl.searchParams.set("limit", limit);
   }
 
-  try {
+try {
     const requestCookieHeader = request.headers.get("cookie") ?? "";
     const cookieHeader = buildForwardCookieHeader(requestCookieHeader, accessCookieToken, refreshCookieToken);
 
@@ -89,8 +89,21 @@ export async function GET(request: Request) {
     });
 
     const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch {
-    return NextResponse.json({ message: "Failed to load dashboard overview" }, { status: 500 });
+    
+    // Check if the backend returned an error response (non-2xx status)
+    if (!response.ok) {
+      const errorMessage = data?.message ?? data?.error?.message ?? "Backend request failed";
+      return NextResponse.json(
+        { message: errorMessage, data: null },
+        { status: response.status }
+      );
+    }
+    
+    // Return successful data with 200 status
+    return NextResponse.json(data);
+  } catch (error) {
+    // Network error or fetch failed
+    const errorMessage = error instanceof Error ? error.message : "Failed to load dashboard overview";
+    return NextResponse.json({ message: errorMessage, data: null }, { status: 500 });
   }
 }

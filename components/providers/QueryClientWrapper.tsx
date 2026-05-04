@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/dashboard/ThemeProvider";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { NotificationsProvider } from "@/store/notifications-context";
+import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
 
 function AuthRedirectHandler({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -24,14 +25,53 @@ function AuthRedirectHandler({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function RealtimeBridge() {
+  useRealtimeUpdates();
+  return null;
+}
+
+function RouteRefreshBridge() {
+  const pathname = usePathname();
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const routeQueryKeys: Record<string, unknown[][]> = {
+      "/dashboard/orders": [["orders"], ["menu-items"]],
+      "/dashboard/messages": [["messages"]],
+      "/dashboard/notifications": [["notifications"]],
+      "/dashboard/newsletter": [["newsletter-subscribers"]],
+      "/dashboard/management/menu": [["menu-categories"], ["menu-items"]],
+      "/dashboard/management/gallery": [["gallery"]],
+      "/dashboard/management/users": [["users"]],
+      "/dashboard/management/activity-logs": [["activity-logs"]],
+      "/dashboard/reports": [["reports"]],
+      "/dashboard/analytics": [["analytics"]],
+    };
+
+    const keys = routeQueryKeys[pathname] ?? [];
+    keys.forEach((queryKey) => {
+      void queryClient.invalidateQueries({ queryKey });
+      void queryClient.refetchQueries({ queryKey, type: "active" });
+    });
+  }, [pathname, queryClient]);
+
+  return null;
+}
+
 export function QueryClientWrapper({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            retry: 1,
-            staleTime: 60 * 1000,
+            retry: (failureCount, error) => {
+              const status = error instanceof Error && "status" in error ? Number(error.status) : undefined;
+              if (status === 401 || status === 403) return false;
+              return failureCount < 1;
+            },
+            staleTime: 0,
+            refetchOnMount: "always",
+            refetchOnReconnect: "always",
             refetchOnWindowFocus: false,
           },
         },
@@ -40,6 +80,8 @@ export function QueryClientWrapper({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <RealtimeBridge />
+      <RouteRefreshBridge />
       <ThemeProvider>
         <AuthRedirectHandler>
           <NotificationsProvider>{children}</NotificationsProvider>

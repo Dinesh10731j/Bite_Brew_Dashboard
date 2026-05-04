@@ -35,6 +35,10 @@ export const apiService = {
       request({ url: "/reports/sales", method: "GET", params: cleanParams(params) }),
   },
 
+  activityLogs: {
+    list: (params?: QueryParams) => request({ url: "/activity-logs", method: "GET", params: cleanParams(params) }),
+  },
+
   users: {
     list: (params?: QueryParams) => request({ url: "/users", method: "GET", params: cleanParams(params) }),
     me: () => request({ url: "/users/me", method: "GET" }),
@@ -63,15 +67,16 @@ export const apiService = {
   },
 
   orders: {
+    create: (body: Record<string, unknown>) => request({ url: "/orders", method: "POST", data: body }),
     list: (params?: QueryParams) => request({ url: "/orders", method: "GET", params: cleanParams(params) }),
     detail: (id: string) => request({ url: `/orders/${id}`, method: "GET" }),
     updateStatus: (id: string, status: string) =>
-      request({ url: `/orders/${id}/status`, method: "PATCH", data: { status, orderStatus: status.toUpperCase() } }),
-    update: (id: string, body: Record<string, unknown>) =>
-      request({ url: `/orders/${id}`, method: "PUT", data: body }),
+      request({ url: `/orders/${id}/status`, method: "PATCH", data: { status } }),
   },
 
   messages: {
+    create: (body: { senderName: string; content: string; phone?: string; email?: string; source?: string }) =>
+      request({ url: "/messages", method: "POST", data: body }),
     list: (params?: QueryParams) => request({ url: "/messages", method: "GET", params: cleanParams(params) }),
     markRead: (id: string, isRead: boolean) =>
       request({ url: `/messages/${id}/read`, method: "PATCH", data: { isRead } }),
@@ -79,6 +84,7 @@ export const apiService = {
   },
 
   newsletter: {
+    subscribe: (email: string) => request({ url: "/newsletter/subscribe", method: "POST", data: { email } }),
     list: (params?: QueryParams) => request({ url: "/newsletter", method: "GET", params: cleanParams(params) }),
     campaign: (body: Record<string, unknown>) => request({ url: "/newsletter/campaign", method: "POST", data: body }),
     updateStatus: (id: string, status: string) =>
@@ -87,6 +93,7 @@ export const apiService = {
   },
 
   notifications: {
+    create: (body: Record<string, unknown>) => request({ url: "/notifications", method: "POST", data: body }),
     list: (params?: QueryParams) => request({ url: "/notifications", method: "GET", params: cleanParams(params) }),
     markRead: (id: string, isRead = true) =>
       request({ url: `/notifications/${id}/read`, method: "PATCH", data: { isRead } }),

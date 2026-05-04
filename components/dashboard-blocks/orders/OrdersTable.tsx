@@ -6,21 +6,19 @@ import { formatCurrency } from "@/lib/utils";
 import { OrderStatusBadge } from "./OrderStatusBadge";
 import { PaymentMethodBadge } from "./PaymentMethodBadge";
 import { Select } from "@/components/shared/ui/Select";
-import { Button } from "@/components/shared/ui/Button";
 
 type OrdersTableProps = {
   data: Order[];
-  onEdit: (order: Order) => void;
   onStatusChange: (order: Order, status: Order["orderStatus"]) => void;
   busy?: boolean;
 };
 
-export function OrdersTable({ data, onEdit, onStatusChange, busy = false }: OrdersTableProps) {
+export function OrdersTable({ data, onStatusChange, busy = false }: OrdersTableProps) {
   return (
     <GenericTable
       title="Orders"
       description="Track dine-in, takeaway, and delivery activity."
-      headers={["Order", "Customer", "Items", "Total", "Type", "Payment", "Status", "Actions"]}
+      headers={["Order", "Customer", "Items", "Total", "Type", "Payment", "Status"]}
       rows={data.map((order) => [
         order.id,
         `${order.customerName} - ${order.phone}`,
@@ -43,11 +41,6 @@ export function OrdersTable({ data, onEdit, onStatusChange, busy = false }: Orde
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </Select>
-        </div>,
-        <div key={`${order.id}-actions`} className="flex gap-2">
-          <Button variant="secondary" className="px-3 py-2 text-xs" onClick={() => onEdit(order)} disabled={busy}>
-            Edit
-          </Button>
         </div>,
       ])}
     />

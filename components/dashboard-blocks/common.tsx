@@ -61,8 +61,11 @@ export function InsightList({
 }) {
   return (
     <div className="space-y-3">
-      {items.map((item) => (
-        <div key={item.name ?? item.place} className="flex items-center justify-between rounded-2xl bg-brand-soft/60 px-4 py-3 dark:bg-white/5">
+      {items.map((item, index) => (
+        <div
+          key={`${item.name ?? item.place ?? "insight"}-${index}`}
+          className="flex items-center justify-between rounded-2xl bg-brand-soft/60 px-4 py-3 dark:bg-white/5"
+        >
           <div>
             <p className="font-medium text-brand-ink dark:text-white">{item.name ?? item.place}</p>
             {item.revenue && <p className="text-xs text-slate-500 dark:text-slate-400">{item.revenue}</p>}
@@ -88,8 +91,11 @@ export function SimpleList({
 }) {
   return (
     <div className="space-y-3">
-      {items.map((item) => (
-        <div key={item.title} className="flex items-start justify-between gap-3 rounded-2xl border border-brand/10 px-4 py-3 dark:border-white/10">
+      {items.map((item, index) => (
+        <div
+          key={`${item.title}-${index}`}
+          className="flex items-start justify-between gap-3 rounded-2xl border border-brand/10 px-4 py-3 dark:border-white/10"
+        >
           <div>
             <p className="font-medium text-brand-ink dark:text-white">{item.title}</p>
             <p className="text-sm text-slate-500 dark:text-slate-300">{item.subtitle}</p>
@@ -141,11 +147,19 @@ export function GenericTable({
   description,
   headers,
   rows,
+  page,
+  totalPages,
+  onPreviousPage,
+  onNextPage,
 }: {
   title: string;
   description?: string;
   headers: string[];
   rows: ReactNode[][];
+  page?: number;
+  totalPages?: number;
+  onPreviousPage?: () => void;
+  onNextPage?: () => void;
 }) {
   return (
     <BlockCard title={title} description={description}>
@@ -158,7 +172,7 @@ export function GenericTable({
           </TableRow>
         ))}
       </DataTable>
-      <Pagination />
+      <Pagination page={page} totalPages={totalPages} onPreviousPage={onPreviousPage} onNextPage={onNextPage} />
     </BlockCard>
   );
 }
@@ -173,8 +187,8 @@ export function SettingsSection({
   return (
     <BlockCard title={title} action={<Button>Edit</Button>}>
       <div className="grid gap-4 md:grid-cols-2">
-        {fields.map((field) => (
-          <div key={field.label} className="rounded-2xl bg-brand-soft/50 px-4 py-3 dark:bg-white/5">
+        {fields.map((field, index) => (
+          <div key={`${field.label}-${index}`} className="rounded-2xl bg-brand-soft/50 px-4 py-3 dark:bg-white/5">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{field.label}</p>
             <p className="mt-2 font-medium text-brand-ink dark:text-white">{field.value}</p>
           </div>
@@ -222,8 +236,8 @@ export function DetailCard({
   return (
     <BlockCard title={title}>
       <div className="grid gap-4 md:grid-cols-2">
-        {items.map((item) => (
-          <div key={item.label}>
+        {items.map((item, index) => (
+          <div key={`${item.label}-${index}`}>
             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
             <p className="mt-1 text-sm font-medium text-brand-ink dark:text-white">{item.value}</p>
           </div>
