@@ -8,7 +8,16 @@ type DashboardView = {
   metrics: { label: string; value: string; delta: string }[];
   trafficSummary: { label: string; visitors: number; orders: number; revenue: number }[];
   recentOrders: ReturnType<typeof normalizeOrder>[];
-  topSellingItems: { name?: string; orders?: number; revenue?: string }[];
+  topSellingItems: {
+    id?: string;
+    name?: string;
+    orders?: number;
+    revenue?: string;
+    price?: string;
+    imageUrl?: string;
+    available?: boolean;
+    featured?: boolean;
+  }[];
   topLocations: { place?: string; visitors?: number }[];
   notifications: {
     id: string;
@@ -66,13 +75,42 @@ export function useDashboard() {
         ? overviewData.recentOrders.map(normalizeOrder)
         : [];
 
+      const orderVolumeByItemId = new Map<string, number>();
+      if (Array.isArray(overviewData?.recentOrders)) {
+        for (const order of overviewData.recentOrders) {
+          const orderItems = Array.isArray(order?.orderItems) ? order.orderItems : [];
+          for (const orderItem of orderItems) {
+            const itemId = String(orderItem?.menuItemId ?? orderItem?.menuItem?.id ?? "");
+            if (!itemId) continue;
+            const quantity = Number(orderItem?.quantity ?? 0);
+            if (!quantity) continue;
+            orderVolumeByItemId.set(itemId, (orderVolumeByItemId.get(itemId) ?? 0) + quantity);
+          }
+        }
+      }
+
       const topSellingItems = Array.isArray(overviewData?.topSellingItems)
-        ? overviewData.topSellingItems.map((item: any) => ({
-            name: item?.name ?? item?.menuItem?.name ?? "Item",
-            orders: item?.orders ? Number(item.orders) : undefined,
-            revenue: item?.revenue ? `NPR ${Number(item.revenue).toLocaleString()}` : undefined,
-            price: item?.price ? `NPR ${Number(item.price).toLocaleString()}` : undefined,
-          }))
+        ? overviewData.topSellingItems.map((item: any) => {
+            const backendOrders = Number(item?.orders ?? item?.orderCount);
+            const popularity = Number(item?.popularity);
+            const derivedOrders = orderVolumeByItemId.get(String(item?.id ?? "")) ?? 0;
+            const resolvedOrders =
+              (Number.isFinite(backendOrders) && backendOrders > 0 && backendOrders) ||
+              (Number.isFinite(popularity) && popularity > 0 && popularity) ||
+              (derivedOrders > 0 && derivedOrders) ||
+              undefined;
+
+            return {
+              id: item?.id ?? item?.menuItem?.id ?? undefined,
+              name: item?.name ?? item?.menuItem?.name ?? "Item",
+              orders: resolvedOrders,
+              revenue: item?.revenue ? `NPR ${Number(item.revenue).toLocaleString()}` : undefined,
+              price: item?.price ? `NPR ${Number(item.price).toLocaleString()}` : undefined,
+              imageUrl: item?.image ?? item?.imageUrl ?? item?.menuItem?.image ?? item?.menuItem?.imageUrl,
+              available: item?.available ?? item?.menuItem?.available,
+              featured: item?.featured ?? item?.menuItem?.featured,
+            };
+          })
         : [];
 
       const topLocations = Array.isArray(overviewData?.topLocations)

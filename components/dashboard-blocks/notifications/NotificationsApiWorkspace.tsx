@@ -16,6 +16,7 @@ export function NotificationsApiWorkspace() {
   const notifications = useNotificationsStore();
   const [query, setQuery] = useState("");
   const [readFilter, setReadFilter] = useState<"all" | "read" | "unread">("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const notificationForm = useForm({
     defaultValues: {
       content: "",
@@ -35,6 +36,25 @@ export function NotificationsApiWorkspace() {
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to create notification");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async (values: { id: string; content: string; type: string; priority: string }) => {
+      await dashboardApi.updateNotification(values.id, {
+        content: values.content,
+        type: values.type,
+        priority: values.priority,
+      });
+    },
+    onSuccess: async () => {
+      setEditingId(null);
+      notificationForm.reset({ content: "", type: "SYSTEM", priority: "MEDIUM" });
+      await notifications.refresh();
+      toast.success("Notification updated");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to update notification");
     },
   });
 
@@ -79,7 +99,11 @@ export function NotificationsApiWorkspace() {
       <BlockCard title="Create Notification" description="Create an operational alert for dashboard users.">
         <form
           className="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]"
-          onSubmit={notificationForm.handleSubmit((values) => createMutation.mutateAsync(values))}
+          onSubmit={notificationForm.handleSubmit((values) =>
+            editingId
+              ? updateMutation.mutateAsync({ id: editingId, ...values })
+              : createMutation.mutateAsync(values)
+          )}
         >
           <Input
             {...notificationForm.register("content", { required: true, minLength: 2 })}
@@ -97,10 +121,32 @@ export function NotificationsApiWorkspace() {
           </Select>
           <Button
             type="submit"
-            disabled={!notificationForm.watch("content").trim() || createMutation.isPending}
+            disabled={
+              !notificationForm.watch("content").trim() ||
+              createMutation.isPending ||
+              updateMutation.isPending
+            }
           >
-            {createMutation.isPending ? "Creating..." : "Create"}
+            {editingId
+              ? updateMutation.isPending
+                ? "Saving..."
+                : "Save"
+              : createMutation.isPending
+                ? "Creating..."
+                : "Create"}
           </Button>
+          {editingId ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setEditingId(null);
+                notificationForm.reset({ content: "", type: "SYSTEM", priority: "MEDIUM" });
+              }}
+            >
+              Cancel
+            </Button>
+          ) : null}
         </form>
       </BlockCard>
 
@@ -108,6 +154,10 @@ export function NotificationsApiWorkspace() {
         title="Notifications"
         description="Operational alerts and system updates."
         headers={["Type", "Message", "Time", "Read", "Priority", "Actions"]}
+        page={notifications.page}
+        totalPages={notifications.totalPages}
+        onPreviousPage={() => notifications.setPage(notifications.page - 1)}
+        onNextPage={() => notifications.setPage(notifications.page + 1)}
         rows={filtered.map((notification) => [
           notification.type,
           notification.content,
@@ -118,10 +168,23 @@ export function NotificationsApiWorkspace() {
             <Button
               variant="secondary"
               className="px-3 py-2 text-xs"
-              onClick={() => void notifications.markRead(notification.id)}
-              disabled={notification.isRead}
+              onClick={() => void notifications.markRead(notification.id, !notification.isRead)}
             >
-              Mark read
+              {notification.isRead ? "Mark unread" : "Mark read"}
+            </Button>
+            <Button
+              variant="secondary"
+              className="px-3 py-2 text-xs"
+              onClick={() => {
+                setEditingId(notification.id);
+                notificationForm.reset({
+                  content: notification.content,
+                  type: notification.type,
+                  priority: notification.priority,
+                });
+              }}
+            >
+              Edit
             </Button>
             <Button
               variant="danger"

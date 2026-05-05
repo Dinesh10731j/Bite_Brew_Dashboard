@@ -142,8 +142,9 @@ export function normalizeMessage(item: any): Message {
 }
 
 function parseDailySeries(series: any[] | undefined, labelField: string, valueField: string) {
-  if (!Array.isArray(series)) return [] as { label: string; value: number }[];
+  if (!Array.isArray(series)) return [] as { key: string; label: string; value: number }[];
   return series.map((item) => ({
+    key: item?.[labelField] ? String(item[labelField]) : String(item?.label ?? "-"),
     label: item?.[labelField]
       ? new Date(item[labelField]).toLocaleDateString(undefined, { month: "short", day: "numeric" })
       : String(item?.label ?? "-"),
@@ -159,12 +160,14 @@ export function normalizeAnalyticsSummary(response: any, days = 7): AnalyticsSum
   const dailyOrders = parseDailySeries(data?.dailyOrders, "day", "count");
   const dailyRevenue = parseDailySeries(data?.dailyRevenue, "day", "amount");
 
+  const ordersByKey = new Map(dailyOrders.map((item) => [item.key, item.value]));
+  const revenueByKey = new Map(dailyRevenue.map((item) => [item.key, item.value]));
   const visitsChart: TrafficPoint[] = dailyVisits.length
-    ? dailyVisits.map((item, index) => ({
+    ? dailyVisits.map((item) => ({
         label: item.label,
         visitors: item.value,
-        orders: dailyOrders[index]?.value ?? 0,
-        revenue: dailyRevenue[index]?.value ?? 0,
+        orders: ordersByKey.get(item.key) ?? 0,
+        revenue: revenueByKey.get(item.key) ?? 0,
       }))
     : [];
 
@@ -174,7 +177,11 @@ export function normalizeAnalyticsSummary(response: any, days = 7): AnalyticsSum
     revenue: Number(data?.revenue ?? totals?.revenue ?? 0),
     totalOrders: Number(totals?.orders ?? data?.totalOrders ?? 0),
     totalMessages: Number(totals?.messages ?? data?.totalMessages ?? 0),
-    conversionRate: Number(data?.conversionRate ?? 0),
+    conversionRate: (() => {
+      const raw = Number(data?.conversionRate ?? 0);
+      if (!Number.isFinite(raw)) return 0;
+      return raw <= 1 ? raw * 100 : raw;
+    })(),
     dailyOrders: dailyOrders.map((item) => ({ label: item.label, count: item.value })),
     dailyRevenue: dailyRevenue.map((item) => ({ label: item.label, revenue: item.value })),
     salesOverview: visitsChart,

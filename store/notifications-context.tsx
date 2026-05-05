@@ -21,10 +21,13 @@ type NotificationsContextType = {
   notifications: NotificationItem[];
   unreadCount: number;
   loading: boolean;
+  page: number;
+  totalPages: number;
   isOpen: boolean;
+  setPage: (page: number) => void;
   setIsOpen: (value: boolean) => void;
   refresh: () => Promise<unknown>;
-  markRead: (id: string) => Promise<void>;
+  markRead: (id: string, isRead?: boolean) => Promise<void>;
   markAllRead: () => Promise<void>;
   remove: (id: string) => Promise<void>;
 };
@@ -43,42 +46,66 @@ function normalizeNotification(item: any): NotificationItem {
   };
 }
 
-async function fetchNotifications(): Promise<NotificationItem[]> {
-  const response = await dashboardApi.getNotifications({ page: 1, limit: 20 });
-  return extractList<any>(response).map(normalizeNotification);
-}
-
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const limit = 10;
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ["notifications"],
-    queryFn: fetchNotifications,
+    queryKey: ["notifications", page, limit],
+    queryFn: async () => {
+      const response = await dashboardApi.getNotifications({ page, limit });
+      const list = extractList<any>(response).map(normalizeNotification);
+      const pagination = (response as any)?.pagination ?? (response as any)?.data?.pagination ?? {};
+      const totalPages = Number(
+        pagination?.totalPages ??
+          pagination?.pages ??
+          pagination?.totalPage ??
+          Math.ceil(Number(pagination?.total ?? pagination?.totalItems ?? list.length) / Number(pagination?.limit ?? limit))
+      );
+      return {
+        notifications: list,
+        totalPages: Math.max(1, totalPages || 1),
+      };
+    },
     staleTime: 4000,
   });
 
   const markReadMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await dashboardApi.markNotificationRead(id, true);
-      return id;
+    mutationFn: async ({ id, isRead }: { id: string; isRead: boolean }) => {
+      await dashboardApi.markNotificationRead(id, isRead);
+      return { id, isRead };
     },
-    onMutate: async (id) => {
+    onMutate: async ({ id, isRead }) => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
-      const previous = queryClient.getQueryData<NotificationItem[]>(["notifications"]);
-      queryClient.setQueryData<NotificationItem[]>(["notifications"], (current = []) =>
-        current.map((item) => (item.id === id ? { ...item, isRead: true } : item))
+      const previous = queryClient.getQueryData<{ notifications: NotificationItem[]; totalPages: number }>([
+        "notifications",
+        page,
+        limit,
+      ]);
+      queryClient.setQueryData<{ notifications: NotificationItem[]; totalPages: number }>(
+        ["notifications", page, limit],
+        (current) =>
+          current
+            ? {
+                ...current,
+                notifications: current.notifications.map((item) =>
+                  item.id === id ? { ...item, isRead } : item
+                ),
+              }
+            : current
       );
       return { previous };
     },
     onError: (_error, _id, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(["notifications"], context.previous);
+        queryClient.setQueryData(["notifications", page, limit], context.previous);
       }
-      toast.error("Failed to mark notification as read");
+      toast.error("Failed to update read status");
     },
-    onSuccess: () => {
-      toast.success("Notification marked as read");
+    onSuccess: (_result, variables) => {
+      toast.success(variables.isRead ? "Notification marked as read" : "Notification marked as unread");
     },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["notifications"] });
@@ -91,15 +118,23 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
-      const previous = queryClient.getQueryData<NotificationItem[]>(["notifications"]);
-      queryClient.setQueryData<NotificationItem[]>(["notifications"], (current = []) =>
-        current.map((item) => ({ ...item, isRead: true }))
+      const previous = queryClient.getQueryData<{ notifications: NotificationItem[]; totalPages: number }>([
+        "notifications",
+        page,
+        limit,
+      ]);
+      queryClient.setQueryData<{ notifications: NotificationItem[]; totalPages: number }>(
+        ["notifications", page, limit],
+        (current) =>
+          current
+            ? { ...current, notifications: current.notifications.map((item) => ({ ...item, isRead: true })) }
+            : current
       );
       return { previous };
     },
     onError: (_error, _id, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(["notifications"], context.previous);
+        queryClient.setQueryData(["notifications", page, limit], context.previous);
       }
       toast.error("Failed to mark all notifications as read");
     },
@@ -118,15 +153,23 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
-      const previous = queryClient.getQueryData<NotificationItem[]>(["notifications"]);
-      queryClient.setQueryData<NotificationItem[]>(["notifications"], (current = []) =>
-        current.filter((item) => item.id !== id)
+      const previous = queryClient.getQueryData<{ notifications: NotificationItem[]; totalPages: number }>([
+        "notifications",
+        page,
+        limit,
+      ]);
+      queryClient.setQueryData<{ notifications: NotificationItem[]; totalPages: number }>(
+        ["notifications", page, limit],
+        (current) =>
+          current
+            ? { ...current, notifications: current.notifications.filter((item) => item.id !== id) }
+            : current
       );
       return { previous };
     },
     onError: (_error, _id, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(["notifications"], context.previous);
+        queryClient.setQueryData(["notifications", page, limit], context.previous);
       }
       toast.error("Failed to delete notification");
     },
@@ -135,7 +178,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     },
   });
 
-  const notifications = query.data ?? [];
+  const notifications = query.data?.notifications ?? [];
+  const totalPages = query.data?.totalPages ?? 1;
   const unreadCount = useMemo(
     () => notifications.filter((item) => !item.isRead).length,
     [notifications]
@@ -146,11 +190,16 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       notifications,
       unreadCount,
       loading: query.isLoading,
+      page,
+      totalPages,
       isOpen,
+      setPage: (nextPage: number) => {
+        setPage(Math.max(1, Math.min(totalPages, nextPage)));
+      },
       setIsOpen,
       refresh: () => query.refetch(),
-      markRead: async (id: string) => {
-        await markReadMutation.mutateAsync(id);
+      markRead: async (id: string, isRead = true) => {
+        await markReadMutation.mutateAsync({ id, isRead });
       },
       markAllRead: async () => {
         await markAllMutation.mutateAsync();
@@ -163,6 +212,8 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       notifications,
       unreadCount,
       query,
+      page,
+      totalPages,
       isOpen,
       markReadMutation,
       markAllMutation,

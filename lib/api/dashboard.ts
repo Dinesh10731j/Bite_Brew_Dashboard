@@ -114,6 +114,8 @@ export const dashboardApi = {
 
   createNotification: (tokenOrBody: string | Record<string, unknown>, maybeBody?: Record<string, unknown>) =>
     apiService.notifications.create((typeof tokenOrBody === "string" ? maybeBody : tokenOrBody) ?? {}),
+  updateNotification: (id: string, tokenOrBody: string | Record<string, unknown>, maybeBody?: Record<string, unknown>) =>
+    apiService.notifications.update(id, (typeof tokenOrBody === "string" ? maybeBody : tokenOrBody) ?? {}),
   getNotifications: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
     apiService.notifications.list(normalizeQuery(tokenOrParams, params)),
   markNotificationRead: (id: string, tokenOrRead?: string | boolean, maybeRead?: boolean) =>

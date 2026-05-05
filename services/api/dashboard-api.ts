@@ -95,6 +95,8 @@ export const apiService = {
   notifications: {
     create: (body: Record<string, unknown>) => request({ url: "/notifications", method: "POST", data: body }),
     list: (params?: QueryParams) => request({ url: "/notifications", method: "GET", params: cleanParams(params) }),
+    update: (id: string, body: Record<string, unknown>) =>
+      request({ url: `/notifications/${id}`, method: "PATCH", data: body }),
     markRead: (id: string, isRead = true) =>
       request({ url: `/notifications/${id}/read`, method: "PATCH", data: { isRead } }),
     markAllRead: () => request({ url: "/notifications/read-all", method: "PATCH", data: {} }),
