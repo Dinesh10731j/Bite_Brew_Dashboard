@@ -3,11 +3,13 @@
 import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import { AlertTriangle, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { BlockCard, DetailCard, GenericTable } from "@/components/dashboard-blocks/common";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { Input } from "@/components/shared/ui/Input";
 import { Select } from "@/components/shared/ui/Select";
 import { Button } from "@/components/shared/ui/Button";
+import { Badge } from "@/components/shared/ui/Badge";
 import { useNotificationsStore } from "@/store/notifications-context";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { toast } from "sonner";
@@ -58,6 +60,40 @@ export function NotificationsApiWorkspace() {
     },
   });
 
+  const getTypeTone = (type: string) => {
+    const value = type.toUpperCase();
+    return value === "ORDER" ? "brand" : value === "MESSAGE" ? "success" : "warning";
+  };
+
+  const getPriorityTone = (priority: string) => {
+    const value = priority.toUpperCase();
+    return value === "HIGH" ? "danger" : value === "LOW" ? "neutral" : "brand";
+  };
+
+  const renderTypeBadge = (type: string) => (
+    <Badge tone={getTypeTone(type)}>{type.toUpperCase()}</Badge>
+  );
+
+  const renderPriorityBadge = (priority: string) => {
+    const value = priority.toUpperCase();
+
+    const icon =
+      value === "HIGH" ? (
+        <AlertTriangle className="h-4 w-4" />
+      ) : (
+        <CheckCircle2 className="h-4 w-4" />
+      );
+
+    return (
+      <Badge tone={getPriorityTone(value)}>
+        <span className="inline-flex items-center gap-2">
+          {icon}
+          {value}
+        </span>
+      </Badge>
+    );
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return notifications.notifications.filter((item) => {
@@ -98,7 +134,7 @@ export function NotificationsApiWorkspace() {
 
       <BlockCard title="Create Notification" description="Create an operational alert for dashboard users.">
         <form
-          className="grid gap-3 md:grid-cols-[1fr_auto_auto_auto]"
+          className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_1fr_1fr_auto]"
           onSubmit={notificationForm.handleSubmit((values) =>
             editingId
               ? updateMutation.mutateAsync({ id: editingId, ...values })
@@ -109,44 +145,49 @@ export function NotificationsApiWorkspace() {
             {...notificationForm.register("content", { required: true, minLength: 2 })}
             placeholder="Notification content"
           />
-          <Select {...notificationForm.register("type")}>
+          <Select {...notificationForm.register("type")}> 
             <option value="SYSTEM">SYSTEM</option>
             <option value="ORDER">ORDER</option>
             <option value="MESSAGE">MESSAGE</option>
           </Select>
-          <Select {...notificationForm.register("priority")}>
+          <Select {...notificationForm.register("priority")}> 
             <option value="MEDIUM">MEDIUM</option>
             <option value="HIGH">HIGH</option>
             <option value="LOW">LOW</option>
           </Select>
-          <Button
-            type="submit"
-            disabled={
-              !notificationForm.watch("content").trim() ||
-              createMutation.isPending ||
-              updateMutation.isPending
-            }
-          >
-            {editingId
-              ? updateMutation.isPending
-                ? "Saving..."
-                : "Save"
-              : createMutation.isPending
-                ? "Creating..."
-                : "Create"}
-          </Button>
-          {editingId ? (
+          <div className="flex flex-wrap gap-3 sm:justify-end">
             <Button
-              type="button"
-              variant="secondary"
-              onClick={() => {
-                setEditingId(null);
-                notificationForm.reset({ content: "", type: "SYSTEM", priority: "MEDIUM" });
-              }}
+              type="submit"
+              className="flex items-center gap-2"
+              disabled={
+                !notificationForm.watch("content").trim() ||
+                createMutation.isPending ||
+                updateMutation.isPending
+              }
             >
-              Cancel
+              <Pencil className="h-4 w-4" />
+              {editingId
+                ? updateMutation.isPending
+                  ? "Saving..."
+                  : "Save"
+                : createMutation.isPending
+                  ? "Creating..."
+                  : "Create"}
             </Button>
-          ) : null}
+            {editingId ? (
+              <Button
+                type="button"
+                variant="secondary"
+                className="flex items-center gap-2"
+                onClick={() => {
+                  setEditingId(null);
+                  notificationForm.reset({ content: "", type: "SYSTEM", priority: "MEDIUM" });
+                }}
+              >
+                Cancel
+              </Button>
+            ) : null}
+          </div>
         </form>
       </BlockCard>
 
@@ -159,22 +200,25 @@ export function NotificationsApiWorkspace() {
         onPreviousPage={() => notifications.setPage(notifications.page - 1)}
         onNextPage={() => notifications.setPage(notifications.page + 1)}
         rows={filtered.map((notification) => [
-          notification.type,
+          renderTypeBadge(notification.type),
           notification.content,
           notification.timestamp,
-          notification.isRead ? "Read" : "Unread",
-          notification.priority,
-          <div key={notification.id} className="flex gap-2">
+          notification.isRead ? <Badge tone="neutral">Read</Badge> : <Badge tone="danger">Unread</Badge>,
+          renderPriorityBadge(notification.priority),
+          <div key={notification.id} className="flex flex-wrap gap-2">
             <Button
+              type="button"
               variant="secondary"
-              className="px-3 py-2 text-xs"
+              className="flex items-center gap-2 px-3 py-2 text-xs"
               onClick={() => void notifications.markRead(notification.id, !notification.isRead)}
             >
+              <CheckCircle2 className="h-4 w-4" />
               {notification.isRead ? "Mark unread" : "Mark read"}
             </Button>
             <Button
+              type="button"
               variant="secondary"
-              className="px-3 py-2 text-xs"
+              className="flex items-center gap-2 px-3 py-2 text-xs"
               onClick={() => {
                 setEditingId(notification.id);
                 notificationForm.reset({
@@ -184,13 +228,16 @@ export function NotificationsApiWorkspace() {
                 });
               }}
             >
-              Edit
+              <Pencil className="h-4 w-4" />
+              Edit priority
             </Button>
             <Button
+              type="button"
               variant="danger"
-              className="px-3 py-2 text-xs"
+              className="flex items-center gap-2 px-3 py-2 text-xs"
               onClick={() => void notifications.remove(notification.id)}
             >
+              <Trash2 className="h-4 w-4" />
               Delete
             </Button>
           </div>,

@@ -27,11 +27,11 @@ export function CollapsibleNav({ compact = false, mode = "sidebar", onNavigate }
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
+              "relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.2,0.9,0.2,1)]",
               mobileCompact && "flex-col justify-center px-2 py-2 text-[11px]",
               sidebarCompact && "justify-center px-0",
               active
-                ? "bg-brand text-white shadow-lg shadow-brand/20"
+                ? "bg-brand text-white shadow-[0_0_0_1px_rgba(32,118,89,0.25)] shadow-brand/30 ring-1 ring-white/10"
                 : "text-slate-600 hover:bg-brand-soft hover:text-brand-ink dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white"
             )}
             title={sidebarCompact ? item.label : undefined}

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Trash2 } from "lucide-react";
 import { BlockCard, GenericTable } from "@/components/dashboard-blocks/common";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { Input } from "@/components/shared/ui/Input";
@@ -9,6 +10,7 @@ import { Select } from "@/components/shared/ui/Select";
 import { Button } from "@/components/shared/ui/Button";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { extractList } from "@/services/api/http";
+import { toast } from "sonner";
 
 type Category = {
   id: string;
@@ -51,6 +53,9 @@ function normalizeMenuItem(item: any): MenuItemRow {
 export function MenuApiWorkspace() {
   const queryClient = useQueryClient();
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [editingPriceValue, setEditingPriceValue] = useState("");
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newItem, setNewItem] = useState({
     name: "",
@@ -84,6 +89,10 @@ export function MenuApiWorkspace() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["menu-categories"] });
       setNewCategoryName("");
+      toast.success("Category created successfully");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to create category");
     },
   });
 
@@ -94,6 +103,10 @@ export function MenuApiWorkspace() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["menu-categories"] });
       queryClient.invalidateQueries({ queryKey: ["menu-items"] });
+      toast.success("Category deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to delete category");
     },
   });
 
@@ -124,6 +137,10 @@ export function MenuApiWorkspace() {
       queryClient.invalidateQueries({ queryKey: ["menu-items"] });
       setNewItem({ name: "", categoryId: "", price: "", discount: "0", description: "" });
       setItemImage(null);
+      toast.success("Menu item created successfully");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to create menu item");
     },
   });
 
@@ -145,6 +162,9 @@ export function MenuApiWorkspace() {
         queryClient.setQueryData(["menu-items"], context.previous);
       }
     },
+    onSuccess: () => {
+      toast.success("Menu item updated successfully");
+    },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["menu-items"] });
     },
@@ -156,6 +176,10 @@ export function MenuApiWorkspace() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["menu-items"] });
+      toast.success("Menu item deleted successfully");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to delete menu item");
     },
   });
 
@@ -166,6 +190,60 @@ export function MenuApiWorkspace() {
     if (selectedCategory === "all") return items;
     return items.filter((item) => item.categoryId === selectedCategory || item.categoryName === selectedCategory);
   }, [items, selectedCategory]);
+
+  const startEditingPrice = (item: MenuItemRow) => {
+    setEditingPriceId(item.id);
+    setEditingPriceValue(String(item.price));
+  };
+
+  const cancelEditingPrice = () => {
+    setEditingPriceId(null);
+    setEditingPriceValue("");
+  };
+
+  const startEditingItem = (item: MenuItemRow) => {
+    setEditingItemId(item.id);
+    setNewItem({
+      name: item.name,
+      categoryId: item.categoryId,
+      price: String(item.price),
+      discount: String(item.discount),
+      description: item.image || "", // Using description field for simplicity, could be enhanced
+    });
+    setItemImage(null);
+  };
+
+  const cancelEditingItem = () => {
+    setEditingItemId(null);
+    setNewItem({ name: "", categoryId: "", price: "", discount: "0", description: "" });
+    setItemImage(null);
+  };
+
+  const saveEditedItem = async () => {
+    if (!editingItemId) return;
+
+    let uploadedImage = "";
+    if (itemImage) {
+      const uploadResponse: any = await dashboardApi.uploadImage(itemImage, "menu");
+      uploadedImage =
+        uploadResponse?.data?.url ??
+        uploadResponse?.url ??
+        uploadResponse?.data?.imageUrl ??
+        "";
+    }
+
+    await updateItemMutation.mutateAsync({
+      id: editingItemId,
+      patch: {
+        name: newItem.name,
+        categoryId: newItem.categoryId,
+        price: Number(newItem.price),
+        discount: Number(newItem.discount),
+        ...(uploadedImage ? { image: uploadedImage } : {}),
+      }
+    });
+    cancelEditingItem();
+  };
 
   return (
     <div className="space-y-6">
@@ -208,7 +286,7 @@ export function MenuApiWorkspace() {
         </div>
       </BlockCard>
 
-      <BlockCard title="Create Menu Item" description="Upload image and create a menu item.">
+      <BlockCard title={editingItemId ? "Edit Menu Item" : "Create Menu Item"} description={editingItemId ? "Update the selected menu item." : "Upload image and create a menu item."}>
         <div className="grid gap-3 md:grid-cols-2">
           <Input
             value={newItem.name}
@@ -252,12 +330,20 @@ export function MenuApiWorkspace() {
           />
         </div>
 
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end gap-2">
+          {editingItemId && (
+            <Button
+              variant="secondary"
+              onClick={cancelEditingItem}
+            >
+              Cancel
+            </Button>
+          )}
           <Button
-            onClick={() => void createItemMutation.mutateAsync()}
+            onClick={editingItemId ? saveEditedItem : () => void createItemMutation.mutateAsync()}
             disabled={!newItem.name || !newItem.categoryId || !newItem.price}
           >
-            Save Item
+            {editingItemId ? "Save Changes" : "Save Item"}
           </Button>
         </div>
       </BlockCard>
@@ -280,7 +366,9 @@ export function MenuApiWorkspace() {
         rows={filteredItems.map((item) => [
           item.name,
           item.categoryName,
-          `NPR ${item.price.toLocaleString()}`,
+          <div key={`${item.id}-price-display`} className="flex items-center gap-2">
+            <span className="font-medium">NPR {item.price.toLocaleString()}</span>
+          </div>,
           <Select
             key={`${item.id}-available`}
             value={String(item.available)}
@@ -307,22 +395,36 @@ export function MenuApiWorkspace() {
             key={`${item.id}-discount`}
             defaultValue={String(item.discount)}
             type="number"
+            min={0}
             className="w-24 py-2 text-xs"
-            onBlur={(event) =>
+            onBlur={(event) => {
+              const raw = Number(event.target.value || 0);
+              // Clamp discount to allowed range (0..100). Backend previously allowed -1; disable client-side.
+              const clamped = Math.min(100, Math.max(0, raw));
               void updateItemMutation.mutateAsync({
                 id: item.id,
-                patch: { discount: Number(event.target.value || 0) },
-              })
-            }
+                patch: { discount: clamped },
+              });
+            }}
           />,
-          <Button
-            key={`${item.id}-delete`}
-            variant="danger"
-            className="px-3 py-2 text-xs"
-            onClick={() => void deleteItemMutation.mutateAsync(item.id)}
-          >
-            Delete
-          </Button>,
+          <div key={`${item.id}-actions`} className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              className="p-1 h-8 w-8"
+              onClick={() => startEditingItem(item)}
+              title="Edit item"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="danger"
+              className="p-1 h-8 w-8"
+              onClick={() => void deleteItemMutation.mutateAsync(item.id)}
+              title="Delete item"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>,
         ])}
       />
     </div>

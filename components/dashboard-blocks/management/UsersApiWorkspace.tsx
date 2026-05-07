@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { BlockCard, GenericTable } from "@/components/dashboard-blocks/common";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { Input } from "@/components/shared/ui/Input";
@@ -14,19 +15,29 @@ type UserRow = {
   id: string;
   name: string;
   email: string;
-  role: "admin" | "manager" | "user";
+  role: "admin" | "manager" | "staff" | "user";
+  permissions: string;
   updatedAt: string;
 };
 
+function getPermissionsForRole(role: string) {
+  const normalized = role.toLowerCase();
+  if (normalized === "admin") return "Full access";
+  if (normalized === "manager") return "Operations, reports";
+  if (normalized === "staff") return "Orders, messages";
+  return "Basic access";
+}
+
 function normalizeUser(item: any): UserRow {
   const roleRaw = String(item?.role ?? "user").toLowerCase();
-  const role = roleRaw === "admin" ? "admin" : roleRaw === "manager" ? "manager" : "user";
+  const role = roleRaw === "admin" || roleRaw === "manager" || roleRaw === "staff" ? roleRaw : "user";
 
   return {
     id: item?.id ?? item?._id ?? "",
     name: item?.name ?? "User",
     email: item?.email ?? "-",
     role,
+    permissions: getPermissionsForRole(role),
     updatedAt: item?.updatedAt ? new Date(item.updatedAt).toLocaleString() : "-",
   };
 }
@@ -36,17 +47,21 @@ export function UsersApiWorkspace() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  const usersQuery = useQuery<UserRow[]>({
+  const usersQuery = useQuery<UserRow[], Error>({
     queryKey: ["users", page, search],
+
+
+
     queryFn: async () => {
       const response = await dashboardApi.getUsers({ page, limit: 10, search: search || undefined });
       return extractList<any>(response).map(normalizeUser);
     },
-    placeholderData: keepPreviousData,
+    placeholderData: [],
+
   });
 
   const roleMutation = useMutation({
-    mutationFn: async ({ id, role }: { id: string; role: "admin" | "manager" | "user" }) => {
+    mutationFn: async ({ id, role }: { id: string; role: "admin" | "manager" | "staff" | "user" }) => {
       await dashboardApi.updateUserRole(id, role);
       return { id, role };
     },
@@ -70,26 +85,29 @@ export function UsersApiWorkspace() {
     },
   });
 
-  const rows = usersQuery.data ?? [];
+  const rows: UserRow[] = Array.isArray(usersQuery.data) ? usersQuery.data : [];
 
   const tableRows = useMemo(
+
     () =>
       rows.map((user) => [
         user.name,
-        user.email,
+        <span className="font-medium text-slate-900 dark:text-white">{user.role}</span>,
+        user.permissions,
+        user.updatedAt,
         <Select
           key={`${user.id}-role`}
           value={user.role}
           onChange={(event) =>
-            void roleMutation.mutateAsync({ id: user.id, role: event.target.value as "admin" | "manager" | "user" })
+            void roleMutation.mutateAsync({ id: user.id, role: event.target.value as "admin" | "manager" | "staff" | "user" })
           }
           className="py-2 text-xs"
         >
           <option value="admin">admin</option>
           <option value="manager">manager</option>
+          <option value="staff">staff</option>
           <option value="user">user</option>
         </Select>,
-        user.updatedAt,
       ]),
     [rows, roleMutation]
   );
@@ -120,9 +138,9 @@ export function UsersApiWorkspace() {
       </BlockCard>
 
       <GenericTable
-        title="Users"
-        description="Paginated users list with role update controls."
-        headers={["Name", "Email", "Role", "Updated"]}
+        title="Admin Users"
+        description="Admin and staff access management."
+        headers={["Name", "Role", "Permissions", "Last Login", "Update Role"]}
         rows={tableRows}
       />
     </div>

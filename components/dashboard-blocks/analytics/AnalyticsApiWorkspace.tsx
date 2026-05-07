@@ -7,6 +7,7 @@ import { Badge } from "@/components/shared/ui/Badge";
 import { BarChart } from "@/components/shared/charts/BarChart";
 import { LineChart } from "@/components/shared/charts/LineChart";
 import { Empty } from "@/components/shared/ui/Empty";
+import { ActivityLogsWorkspace } from "./ActivityLogs";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { formatNumber, formatPercent } from "@/lib/utils";
 
@@ -122,6 +123,8 @@ export function AnalyticsApiWorkspace() {
           )}
         </BlockCard>
       </div>
+
+      <ActivityLogsWorkspace />
     </div>
   );
 }

@@ -6,12 +6,20 @@ import { ThemeToggle } from "./ThemeToggle";
 import { useNotificationsStore } from "@/store/notifications-context";
 import { Button } from "@/components/shared/ui/Button";
 import { Badge } from "@/components/shared/ui/Badge";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 type TopBarProps = {
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
   onOpenMobileSidebar: () => void;
 };
+
+function getGreeting(date: Date) {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export function TopBar({ sidebarCollapsed, onToggleSidebar, onOpenMobileSidebar }: TopBarProps) {
   const notifications = useNotificationsStore();
@@ -23,6 +31,11 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar, onOpenMobileSidebar 
       void notifications.markAllRead();
     }
   };
+
+  const currentUser = useCurrentUser();
+  const greeting = getGreeting(new Date());
+  const userName = currentUser.user?.name ?? "";
+
 
   return (
     <header className="sticky top-0 z-30 rounded-3xl border border-white/50 bg-white/75 p-4 backdrop-blur-xl dark:border-white/10 dark:bg-[#0d1412]/75">
@@ -47,9 +60,18 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar, onOpenMobileSidebar 
             </button>
             <Breadcrumbs />
           </div>
-          <div>
-            <h2 className="text-2xl font-semibold text-brand-ink dark:text-white">Cafe command center</h2>
-            <p className="text-sm text-slate-500 dark:text-slate-300">Monitor visitors, orders, and team activity in one place.</p>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 h-10 w-10 shrink-0 rounded-2xl bg-brand/10 p-2 ring-1 ring-brand/15 dark:bg-white/5">
+              <img
+                src="/assets/images/bite_brew_logo.jpeg"
+                alt="Cafe"
+                className="h-full w-full rounded-2xl object-cover"
+              />
+            </div>
+            <div>
+              <h2 className="text-2xl font-semibold text-brand-ink dark:text-white">Cafe command center</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-300">Monitor visitors, orders, and team activity in one place.</p>
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -130,10 +152,18 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar, onOpenMobileSidebar 
           </div>
 
           <div className="flex items-center gap-3 rounded-2xl bg-brand px-4 py-3 text-white">
-            <UserCircle2 className="h-5 w-5" />
+            <div className="h-10 w-10 rounded-2xl bg-white/10 p-2">
+              <img
+                src="/assets/images/bite_brew_logo.jpeg"
+                alt="Operations"
+                className="h-full w-full rounded-2xl object-cover"
+              />
+            </div>
             <div className="text-left">
-              <p className="text-sm font-semibold">Admin Panel</p>
-              <p className="text-xs text-white/80">Operations Manager</p>
+              <p className="text-sm font-semibold">{greeting}</p>
+              <p className="text-xs text-white/80">
+                {currentUser.isLoading ? "Loading user..." : userName ? userName : "Operations Manager"}
+              </p>
             </div>
           </div>
         </div>

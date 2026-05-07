@@ -127,7 +127,16 @@ export function ReportsApiWorkspace() {
 
       {/* Date Range Display */}
       {headline.dateRange && (
-        <BlockCard title="Report Period">
+        <BlockCard
+          title="Report Period"
+          action={
+            <img
+              src="/assets/images/bite_brew_logo.jpeg"
+              alt="Report"
+              className="h-9 w-9 rounded-2xl object-cover"
+            />
+          }
+        >
           <p className="text-lg text-brand-ink dark:text-white">{headline.dateRange}</p>
         </BlockCard>
       )}
@@ -142,7 +151,17 @@ export function ReportsApiWorkspace() {
       </div>
 
       {/* Sales by Day */}
-      <BlockCard title="Daily Sales" description="Sales breakdown by day">
+      <BlockCard
+        title="Daily Sales"
+        description="Sales breakdown by day"
+        action={
+          <img
+            src="/assets/images/bite_brew_logo.jpeg"
+            alt="Daily"
+            className="h-9 w-9 rounded-2xl object-cover"
+          />
+        }
+      >
         {resource.data.salesByDay.length ? (
           <div className="space-y-3">
             {resource.data.salesByDay.map((item, index) => (
@@ -168,7 +187,17 @@ export function ReportsApiWorkspace() {
       </BlockCard>
 
       {/* Best Selling Items */}
-      <BlockCard title="Best Selling Items" description="Top items by quantity and sales">
+      <BlockCard
+        title="Best Selling Items"
+        description="Top items by quantity and sales"
+        action={
+          <img
+            src="/assets/images/bite_brew_logo.jpeg"
+            alt="Top items"
+            className="h-9 w-9 rounded-2xl object-cover"
+          />
+        }
+      >
         {resource.data.topItems.length ? (
           <div className="space-y-3">
             {resource.data.topItems.slice(0, 10).map((item, index) => (
@@ -195,7 +224,17 @@ export function ReportsApiWorkspace() {
         )}
       </BlockCard>
 
-      <ExportButton />
+      <div className="pt-2">
+        <ExportButton />
+        <div className="mt-3 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-300">
+          <img
+            src="/assets/images/bite_brew_logo.jpeg"
+            alt="Export"
+            className="h-6 w-6 rounded-xl object-cover"
+          />
+          Reports ready to download
+        </div>
+      </div>
     </div>
   );
 }

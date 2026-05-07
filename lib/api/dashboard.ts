@@ -44,8 +44,11 @@ export const dashboardApi = {
   getCurrentUser: () => apiService.users.me(),
   updateUserRole: (id: string, tokenOrRole: string | UserRole, maybeRole?: UserRole) => {
     const role = (maybeRole ?? tokenOrRole) as UserRole;
-    return apiService.users.updateRole(id, role === "staff" ? "manager" : role);
+    // apiService.users.updateRole currently supports admin|user|manager
+    const allowedRole = (role === "staff" ? "user" : role) as "admin" | "user" | "manager";
+    return apiService.users.updateRole(id, allowedRole);
   },
+
 
   getMenuCategories: (params?: QueryParams) => apiService.menu.categories.list(params),
   createMenuCategory: (tokenOrBody: string | { name: string; description?: string; isActive?: boolean }, maybeBody?: { name: string; description?: string; isActive?: boolean }) =>

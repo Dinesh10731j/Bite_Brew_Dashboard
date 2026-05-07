@@ -3,9 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { X } from "lucide-react";
-import { Coffee, LogOut } from "lucide-react";
+import { X, LogOut } from "lucide-react";
+import Image from "next/image";
 import { Card } from "@/components/shared/ui/Card";
+import logoSrc from "@/app/assets/images/bite_brew_logo.jpeg";
+
+
+
 import { Button } from "@/components/shared/ui/Button";
 import { cn } from "@/lib/utils";
 import { CollapsibleNav } from "./CollapsibleNav";
@@ -56,12 +60,23 @@ export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }
       <Card className="flex min-h-[calc(100vh-2rem)] flex-col bg-panel-grid bg-[size:100%_100%,22px_22px,22px_22px] xl:sticky xl:top-6 xl:min-h-[calc(100vh-3rem)]">
         <div className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand text-white">
-            <Coffee className="h-6 w-6" />
+            <Image
+              src={logoSrc}
+              alt="Bite Brew"
+              width={48}
+              height={48}
+              className="h-8 w-8 rounded-2xl object-contain"
+              priority
+            />
+
+
           </div>
           {!collapsed && (
             <div className="flex-1">
-              <p className="text-xs uppercase tracking-[0.3em] text-brand">Cafe Console</p>
-              <h1 className="text-lg font-semibold text-brand-ink dark:text-white">Java Brew & Bites</h1>
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.3em] text-brand">Bite Brew</p>
+                <h1 className="text-lg font-semibold text-brand-ink dark:text-white">Cafe Console</h1>
+              </div>
             </div>
           )}
           <button
