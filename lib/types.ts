@@ -57,7 +57,11 @@ export type Order = {
   deliveryAddress?: string;
   createdTime: string;
   timeline: { label: string; time: string; active: boolean }[];
+
+  // UI helpers (from orderItems[].menuItem.image)
+  orderItemImages?: string[];
 };
+
 
 export type Message = {
   id: string;

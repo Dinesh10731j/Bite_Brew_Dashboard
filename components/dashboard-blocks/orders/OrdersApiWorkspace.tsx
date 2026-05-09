@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { useOrders } from "@/hooks/useOrders";
 import { useRealtimeResourceRefresh } from "@/hooks/useRealtimeUpdates";
@@ -9,9 +9,9 @@ import type { Order } from "@/lib/types";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { extractList } from "@/services/api/http";
 
-//import { AddOrderForm, type CreateOrderPayload } from "./AddOrderForm";
 import { OrderFilters } from "./OrderFilters";
 import { OrdersTable } from "./OrdersTable";
+import { EditOrderModal } from "./EditOrderModal";
 
 function normalizeCatalogItem(item: any) {
   return {
@@ -24,6 +24,9 @@ function normalizeCatalogItem(item: any) {
 export function OrdersApiWorkspace() {
   const [statusFilter, setStatusFilter] = useState<"all" | Order["orderStatus"]>("all");
 
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+
   const orders = useOrders();
   useRealtimeResourceRefresh(["orders"], orders.refresh);
 
@@ -35,24 +38,6 @@ export function OrdersApiWorkspace() {
     },
   });
 
-  // const createOrderMutation = useMutation({
-  //   mutationFn: async (payload: CreateOrderPayload) => {
-  //     await dashboardApi.createOrder({
-  //       customerName: payload.customerName,
-  //       phone: payload.phone,
-  //       email: payload.email,
-  //       tableNumber: payload.tableNumber,
-  //       deliveryAddress: payload.deliveryAddress,
-  //       orderType: payload.orderType,
-  //       paymentMethod: payload.paymentMethod,
-  //       items: [{ menuItemId: payload.menuItemId, quantity: payload.quantity }],
-  //     });
-  //   },
-  //   onSuccess: async () => {
-  //     await orders.refresh();
-  //   },
-  // });
-
   const filteredOrders = useMemo(() => {
     if (statusFilter === "all") return orders.filteredOrders;
     return orders.filteredOrders.filter((entry) => entry.orderStatus === statusFilter);
@@ -60,11 +45,7 @@ export function OrdersApiWorkspace() {
 
   return (
     <div className="space-y-6">
-      <ResourceNote
-        error={orders.error || orders.mutationError}
-        loading={orders.loading}
-        fallbackLabel="orders"
-      />
+      <ResourceNote error={orders.error || orders.mutationError} loading={orders.loading} fallbackLabel="orders" />
 
       <OrderFilters
         query={orders.query}
@@ -73,17 +54,24 @@ export function OrdersApiWorkspace() {
         onStatusChange={setStatusFilter}
       />
 
-      {/* <AddOrderForm
-        catalog={catalogQuery.data ?? []}
-        loading={createOrderMutation.isPending}
-        onAdd={(payload) => createOrderMutation.mutateAsync(payload)}
-      /> */}
-
       <OrdersTable
         data={filteredOrders}
         onStatusChange={orders.updateOrderStatus}
+        onEdit={(order) => {
+          setEditingOrder(order);
+          setEditModalOpen(true);
+        }}
         busy={orders.mutating}
+      />
+
+      <EditOrderModal
+        open={editModalOpen}
+        order={editingOrder}
+        busy={orders.mutating}
+        onClose={() => setEditModalOpen(false)}
+        onSaved={() => orders.refresh()}
       />
     </div>
   );
 }
+

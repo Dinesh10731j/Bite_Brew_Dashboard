@@ -101,6 +101,10 @@ export function normalizeOrder(item: any): Order {
   const orderType: Order["orderType"] =
     orderTypeRaw === "delivery" ? "delivery" : orderTypeRaw === "dine_in" || orderTypeRaw === "dine-in" ? "dine-in" : "takeaway";
 
+  const orderItemImages = items
+    .map((part: any) => part?.menuItem?.image ?? part?.image)
+    .filter((url: any) => typeof url === "string" && url.trim().length > 0);
+
   return {
     id: item?.orderNumber ?? item?.id ?? item?._id ?? "JBB-0000",
     backendId: item?.id ?? item?._id ?? undefined,
@@ -116,6 +120,7 @@ export function normalizeOrder(item: any): Order {
     orderStatus: status,
     tableNumber: item?.tableNumber ?? undefined,
     deliveryAddress: item?.deliveryAddress ?? undefined,
+    orderItemImages,
     createdTime: item?.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "-",
     timeline: [
       { label: "Pending", time: item?.createdAt ? "Created" : "--", active: true },
