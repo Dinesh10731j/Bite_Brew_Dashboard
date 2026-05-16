@@ -4,17 +4,20 @@ type PremiumLoaderProps = {
   label?: string;
   className?: string;
   fullScreen?: boolean;
+  overlay?: boolean;
 };
 
 export function PremiumLoader({
   label = "Loading dashboard...",
   className,
   fullScreen = false,
+  overlay = false,
 }: PremiumLoaderProps) {
   return (
     <div
       className={cn(
         "flex flex-col items-center justify-center gap-4",
+        overlay && "fixed inset-0 z-50 bg-slate-950/25 backdrop-blur-sm",
         fullScreen && "min-h-[60vh]",
         className
       )}

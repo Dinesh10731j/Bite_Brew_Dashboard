@@ -1,9 +1,11 @@
 {
   "/dashboard/api/protected/[...path]/route": "app/dashboard/api/protected/[...path]/route.js",
-  "/_not-found/page": "app/_not-found/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/dashboard/(management)/management/activity-logs/page": "app/dashboard/(management)/management/activity-logs/page.js",
+  "/dashboard/(messages)/messages/page": "app/dashboard/(messages)/messages/page.js",
+  "/dashboard/(management)/management/menu/page": "app/dashboard/(management)/management/menu/page.js",
+  "/dashboard/(orders)/orders/page": "app/dashboard/(orders)/orders/page.js",
   "/dashboard/(notifications)/notifications/page": "app/dashboard/(notifications)/notifications/page.js",
-  "/dashboard/(management)/management/page": "app/dashboard/(management)/management/page.js",
-  "/dashboard/(analytics)/analytics/page": "app/dashboard/(analytics)/analytics/page.js"
+  "/dashboard/(analytics)/analytics/page": "app/dashboard/(analytics)/analytics/page.js",
+  "/dashboard/(newsletter)/newsletter/page": "app/dashboard/(newsletter)/newsletter/page.js",
+  "/dashboard/(management)/management/page": "app/dashboard/(management)/management/page.js"
 }

@@ -530,6 +530,10 @@ video {
   top: 1rem;
   bottom: 1rem;
 }
+.inset-x-0 {
+  left: 0px;
+  right: 0px;
+}
 .-right-1 {
   right: -0.25rem;
 }
@@ -562,6 +566,9 @@ video {
 }
 .top-\[-10\%\] {
   top: -10%;
+}
+.top-16 {
+  top: 4rem;
 }
 .z-10 {
   z-index: 10;
@@ -717,6 +724,15 @@ video {
 .h-full {
   height: 100%;
 }
+.h-28 {
+  height: 7rem;
+}
+.h-72 {
+  height: 18rem;
+}
+.h-80 {
+  height: 20rem;
+}
 .max-h-\[320px\] {
   max-height: 320px;
 }
@@ -797,6 +813,10 @@ video {
 }
 .w-full {
   width: 100%;
+}
+.w-fit {
+  width: -moz-fit-content;
+  width: fit-content;
 }
 .min-w-0 {
   min-width: 0px;
@@ -1167,6 +1187,15 @@ video {
 }
 .bg-white\/80 {
   background-color: rgb(255 255 255 / 0.8);
+}
+.bg-slate-950\/25 {
+  background-color: rgb(2 6 23 / 0.25);
+}
+.bg-slate-200\/80 {
+  background-color: rgb(226 232 240 / 0.8);
+}
+.bg-white\/85 {
+  background-color: rgb(255 255 255 / 0.85);
 }
 .bg-\[url\(\'https\:\/\/www\.transparenttextures\.com\/patterns\/asfalt-dark\.png\'\)\] {
   background-image: url('https://www.transparenttextures.com/patterns/asfalt-dark.png');
@@ -1619,6 +1648,10 @@ video {
   --tw-blur: blur(120px);
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
+.blur-\[2px\] {
+  --tw-blur: blur(2px);
+  filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
+}
 .filter {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
 }
@@ -1632,6 +1665,10 @@ video {
 }
 .backdrop-blur-xl {
   --tw-backdrop-blur: blur(24px);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+.backdrop-blur {
+  --tw-backdrop-blur: blur(8px);
   backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 .transition {
@@ -1659,6 +1696,9 @@ video {
 }
 .duration-500 {
   transition-duration: 500ms;
+}
+.duration-200 {
+  transition-duration: 200ms;
 }
 .ease-\[cubic-bezier\(0\.2\2c 0\.9\2c 0\.2\2c 1\)\] {
   transition-timing-function: cubic-bezier(0.2,0.9,0.2,1);
@@ -2075,6 +2115,9 @@ button,
 .dark\:border-white\/10:is(.dark *) {
   border-color: rgb(255 255 255 / 0.1);
 }
+.dark\:border-brand\/30:is(.dark *) {
+  border-color: rgb(32 118 89 / 0.3);
+}
 .dark\:bg-\[\#0d1412\]\/75:is(.dark *) {
   background-color: rgb(13 20 18 / 0.75);
 }
@@ -2116,6 +2159,12 @@ button,
 }
 .dark\:bg-white\/\[0\.03\]:is(.dark *) {
   background-color: rgb(255 255 255 / 0.03);
+}
+.dark\:bg-slate-800\/80:is(.dark *) {
+  background-color: rgb(30 41 59 / 0.8);
+}
+.dark\:bg-slate-900\/80:is(.dark *) {
+  background-color: rgb(15 23 42 / 0.8);
 }
 .dark\:from-\[\#101916\]:is(.dark *) {
   --tw-gradient-from: #101916 var(--tw-gradient-from-position);
@@ -2164,6 +2213,10 @@ button,
 .dark\:text-white:is(.dark *) {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+.dark\:text-slate-100:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(241 245 249 / var(--tw-text-opacity, 1));
 }
 .dark\:hover\:bg-brand\/90:hover:is(.dark *) {
   background-color: rgb(32 118 89 / 0.9);

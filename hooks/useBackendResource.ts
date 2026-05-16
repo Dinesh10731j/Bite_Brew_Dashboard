@@ -58,6 +58,7 @@ export function useBackendResource<TData>({
   }, [fallback]);
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
     };
