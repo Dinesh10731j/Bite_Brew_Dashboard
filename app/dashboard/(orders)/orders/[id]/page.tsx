@@ -6,7 +6,7 @@ import { DetailCard } from "@/components/dashboard-blocks/common";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { normalizeOrder } from "@/lib/dashboard-normalizers";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/shared";
 
 export default function OrderDetailPage() {
   const params = useParams<{ id: string }>();

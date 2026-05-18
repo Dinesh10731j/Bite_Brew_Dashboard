@@ -6,14 +6,32 @@ import { AreaChart } from "@/components/shared/charts/AreaChart";
 import { Badge } from "@/components/shared/ui/Badge";
 import { BarChart } from "@/components/shared/charts/BarChart";
 import { LineChart } from "@/components/shared/charts/LineChart";
+import { PieChart } from "@/components/shared/charts/PieChart";
 import { Empty } from "@/components/shared/ui/Empty";
 import { ActivityLogsWorkspace } from "./ActivityLogs";
 import { useAnalytics } from "@/hooks/useAnalytics";
-import { formatNumber, formatPercent } from "@/lib/utils";
+import { useBackendResource } from "@/hooks/useBackendResource";
+import { dashboardApi } from "@/lib/api/dashboard";
+import { formatNumber, formatPercent } from "@/lib/shared";
 
 export function AnalyticsApiWorkspace() {
   const analytics = useAnalytics(7);
   const salesOverview = analytics.charts.salesOverview;
+  const salesReport = useBackendResource<{ topItems: { name: string; quantity: number; orders?: number }[] }>({
+    fallback: { topItems: [] },
+    loader: async () => {
+      const response: any = await dashboardApi.getSalesReport();
+      const data = response?.data ?? {};
+      const topItems = Array.isArray(data?.topItems)
+        ? data.topItems.map((item: any) => ({
+            name: item?.name ?? item?.menuItem?.name ?? "Other",
+            quantity: Number(item?.quantity ?? item?.orders ?? 0),
+          }))
+        : [];
+      return { topItems };
+    },
+    resetOnError: false,
+  });
 
   const revenueData = analytics.charts.revenueAnalytics.map((item) => ({
     label: item.label,
@@ -31,6 +49,11 @@ export function AnalyticsApiWorkspace() {
   const conversionTone = analytics.data.conversionRate >= 2 ? "success" : analytics.data.conversionRate >= 1 ? "warning" : "danger";
   const ordersData = analytics.charts.ordersPerDay;
   const hasOrdersData = ordersData.some((item) => item.value > 0);
+  const topItemMixData = salesReport.data.topItems.slice(0, 6).map((item, index) => ({
+    label: item.name,
+    value: item.quantity,
+    color: ["#207659", "#38a169", "#7fcfb2", "#155744", "#9fd8bf", "#0f4a37"][index % 6],
+  }));
 
   return (
     <div className="space-y-6 pb-24 xl:pb-6">
@@ -105,6 +128,14 @@ export function AnalyticsApiWorkspace() {
           </div>
         </BlockCard>
       </div>
+
+      <BlockCard title="Top Items Mix" description="How many times each item was ordered (e.g., Mojito, Other).">
+        {topItemMixData.length ? (
+          <PieChart data={topItemMixData} />
+        ) : (
+          <Empty title="No Item Mix" description="Backend did not return top item counts yet." />
+        )}
+      </BlockCard>
 
       <div className="grid gap-6 xl:grid-cols-2">
         <BlockCard title="Orders Per Day" description="Order spikes and low-volume days.">

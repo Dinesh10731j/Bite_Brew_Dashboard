@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useBackendResource } from "@/hooks/useBackendResource";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { findArrayData, normalizeOrder } from "@/lib/dashboard-normalizers";
-import type { Order } from "@/lib/types";
+import type { Order } from "@/lib/shared";
 
 export function useOrders() {
   const [query, setQuery] = useState("");
@@ -53,11 +53,32 @@ export function useOrders() {
     [resource]
   );
 
+  const deleteOrder = useCallback(
+    async (order: Order) => {
+      const targetId = order.backendId ?? order.id;
+
+      await resource.runMutation(
+        async () => {
+          await dashboardApi.deleteOrder(targetId);
+          return targetId;
+        },
+        {
+          optimisticData: (current) => current.filter((entry) => entry.id !== order.id),
+          onError: (error) => toast.error(error.message),
+        }
+      );
+
+      toast.success("Order deleted successfully");
+    },
+    [resource]
+  );
+
   return {
     ...resource,
     query,
     setQuery,
     filteredOrders,
     updateOrderStatus,
+    deleteOrder,
   };
 }

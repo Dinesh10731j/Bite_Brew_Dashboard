@@ -1,8 +1,8 @@
 import Image from "next/image";
-import type { MenuItem as MenuItemType } from "@/lib/types";
+import type { MenuItem as MenuItemType } from "@/lib/shared";
 import { Badge } from "@/components/shared/ui/Badge";
 import { Card } from "@/components/shared/ui/Card";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/shared";
 import { Empty } from "@/components/shared/ui/Empty";
 
 export function MenuItem({ items = [] }: { items?: MenuItemType[] }) {

@@ -70,6 +70,7 @@ export const apiService = {
     create: (body: Record<string, unknown>) => request({ url: "/orders", method: "POST", data: body }),
     list: (params?: QueryParams) => request({ url: "/orders", method: "GET", params: cleanParams(params) }),
     detail: (id: string) => request({ url: `/orders/${id}`, method: "GET" }),
+    remove: (id: string) => request({ url: `/orders/${id}`, method: "DELETE" }),
     updateStatus: (id: string, status: string) =>
       request({ url: `/orders/${id}/status`, method: "PATCH", data: { status } }),
   },

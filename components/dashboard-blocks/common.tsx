@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, MapPin, TrendingUp } from "lucide-react";
 import { BarChart } from "@/components/shared/charts/BarChart";
 import { PieChart } from "@/components/shared/charts/PieChart";
 import { DataTable } from "@/components/shared/tables/DataTable";
@@ -11,17 +11,19 @@ import { Button } from "@/components/shared/ui/Button";
 import { Card } from "@/components/shared/ui/Card";
 import { Empty } from "@/components/shared/ui/Empty";
 import { Pagination } from "@/components/shared/ui/Pagination";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/shared";
 
 export function BlockCard({
   title,
   description,
+  icon,
   action,
   children,
   className,
 }: {
   title: string;
   description?: string;
+  icon?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -30,7 +32,10 @@ export function BlockCard({
     <Card className={cn("space-y-5", className)}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-brand-ink dark:text-white">{title}</h3>
+          <h3 className="flex items-center gap-2 text-lg font-semibold text-brand-ink dark:text-white">
+            {icon ? <span className="text-brand">{icon}</span> : null}
+            <span>{title}</span>
+          </h3>
           {description && <p className="text-sm text-slate-500 dark:text-slate-300">{description}</p>}
         </div>
         {action}
@@ -40,10 +45,13 @@ export function BlockCard({
   );
 }
 
-export function MetricPanel({ label, value, delta }: { label: string; value: string; delta: string }) {
+export function MetricPanel({ label, value, delta, icon }: { label: string; value: string; delta: string; icon?: ReactNode }) {
   return (
     <Card className="space-y-3 bg-gradient-to-br from-white to-brand-soft/80 dark:from-[#101916] dark:to-brand/10">
-      <p className="text-sm text-slate-500 dark:text-slate-300">{label}</p>
+      <p className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-300">
+        {icon ? <span className="text-brand">{icon}</span> : null}
+        <span>{label}</span>
+      </p>
       <div className="flex items-end justify-between gap-4">
         <h3 className="text-3xl font-semibold text-brand-ink dark:text-white">{value}</h3>
         <Badge tone="brand">{delta}</Badge>
@@ -67,7 +75,10 @@ export function InsightList({
           className="flex items-center justify-between rounded-2xl bg-brand-soft/60 px-4 py-3 dark:bg-white/5"
         >
           <div>
-            <p className="font-medium text-brand-ink dark:text-white">{item.name ?? item.place}</p>
+            <p className="flex items-center gap-1 font-medium text-brand-ink dark:text-white">
+              {valueLabel === "visitors" ? <MapPin className="h-4 w-4 text-brand" /> : <TrendingUp className="h-4 w-4 text-brand" />}
+              {item.name ?? item.place}
+            </p>
             {item.revenue && <p className="text-xs text-slate-500 dark:text-slate-400">{item.revenue}</p>}
             {!item.revenue && item.price && <p className="text-xs text-slate-500 dark:text-slate-400">{item.price}</p>}
           </div>
@@ -87,7 +98,7 @@ export function InsightList({
 export function SimpleList({
   items,
 }: {
-  items: { title: string; subtitle: string; badge?: string; tone?: "neutral" | "brand" | "success" | "warning" | "danger" }[];
+  items: { title: string; subtitle: string; icon?: ReactNode; badge?: string; tone?: "neutral" | "brand" | "success" | "warning" | "danger" }[];
 }) {
   return (
     <div className="space-y-3">
@@ -96,9 +107,12 @@ export function SimpleList({
           key={`${item.title}-${index}`}
           className="flex items-start justify-between gap-3 rounded-2xl border border-brand/10 px-4 py-3 dark:border-white/10"
         >
-          <div>
+          <div className="flex items-start gap-2">
+            {item.icon ? <span className="mt-0.5 text-brand">{item.icon}</span> : null}
+            <div>
             <p className="font-medium text-brand-ink dark:text-white">{item.title}</p>
             <p className="text-sm text-slate-500 dark:text-slate-300">{item.subtitle}</p>
+            </div>
           </div>
           {item.badge && <Badge tone={item.tone}>{item.badge}</Badge>}
         </div>

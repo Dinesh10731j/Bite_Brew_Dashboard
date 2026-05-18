@@ -1,7 +1,8 @@
-import type { Order } from "@/lib/types";
+import type { Order } from "@/lib/shared";
 import { Badge } from "@/components/shared/ui/Badge";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/shared";
 import { Empty } from "@/components/shared/ui/Empty";
+import { CircleUserRound, Hash, ReceiptText } from "lucide-react";
 
 export function RecentOrders({ data = [] }: { data?: Order[] }) {
   if (!data.length) {
@@ -26,8 +27,13 @@ export function RecentOrders({ data = [] }: { data?: Order[] }) {
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="font-semibold text-brand-ink dark:text-white">{order.customerName}</p>
-              <p className="text-xs text-slate-500 dark:text-slate-300">#{order.id}</p>
+              <p className="flex items-center gap-1 font-semibold text-brand-ink dark:text-white">
+                <CircleUserRound className="h-4 w-4 text-brand" />
+                {order.customerName}
+              </p>
+              <p className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-300">
+                <Hash className="h-3.5 w-3.5 text-brand/80" />#{order.id}
+              </p>
             </div>
             <Badge tone={statusTone[order.orderStatus]}>{order.orderStatus}</Badge>
           </div>
@@ -37,6 +43,7 @@ export function RecentOrders({ data = [] }: { data?: Order[] }) {
               {formatCurrency(order.totalPrice)}
             </p>
             <div className="flex items-center gap-2">
+              <ReceiptText className="h-4 w-4 text-brand" />
               <Badge tone="neutral">{order.quantity} qty</Badge>
               <Badge tone="brand">{order.orderType}</Badge>
             </div>

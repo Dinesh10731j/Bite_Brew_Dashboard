@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import type { loginFormValues, loginResponse } from "@/lib/types";
+import type { loginFormValues, loginResponse } from "@/lib/shared";
 import { canAccessDashboard } from "@/lib/auth";
 import { toast } from "sonner";
 import { dashboardApi } from "@/lib/api/dashboard";

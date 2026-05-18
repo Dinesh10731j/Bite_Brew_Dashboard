@@ -6,7 +6,7 @@ import { useRealtimeResourceRefresh } from "@/hooks/useRealtimeUpdates";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { Modal } from "@/components/shared/ui/Modal";
 import { Button } from "@/components/shared/ui/Button";
-import type { Message } from "@/lib/types";
+import type { Message } from "@/lib/shared";
 import { MessageCard } from "./MessageCard";
 import { MessageDetail } from "./MessageDetail";
 import { MessageFilters } from "./MessageFilters";

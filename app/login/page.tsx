@@ -2,13 +2,15 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { Coffee, ArrowRight, Lock, Mail, Loader2 } from "lucide-react";
-import { loginFormValues } from "@/lib/types";
+import { loginFormValues } from "@/lib/shared";
 import { UseUserLogin } from "@/hooks/useLogin";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import logoSrc from "@/app/assets/images/bite_brew_logo.jpeg";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -77,12 +79,12 @@ export default function LoginPage() {
 
           <div className="relative z-10 flex items-center gap-6">
             <div className="flex -space-x-4">
-              {[1, 2, 3, 4].map((i) => (
+              {["KB", "RM", "LS", "AJ"].map((initials) => (
                 <div
-                  key={i}
+                  key={initials}
                   className="w-10 h-10 rounded-full border-4 border-[#0a2920] bg-[#207659] flex items-center justify-center text-[10px] font-bold overflow-hidden"
                 >
-                  <img src={`https://i.pravatar.cc/100?img=${i + 10}`} alt="user" />
+                  <span className="text-white">{initials}</span>
                 </div>
               ))}
             </div>
@@ -95,8 +97,14 @@ export default function LoginPage() {
 
         <div className="p-8 md:p-20 flex flex-col justify-center bg-white">
           <div className="mb-12">
-            <div className="lg:hidden w-12 h-12 bg-[#0a2920] rounded-xl flex items-center justify-center mb-6">
-              <Coffee className="text-[#8EC894]" size={24} />
+            <div className="inline-flex items-center gap-3 rounded-2xl border border-[#0a2920]/10 bg-[#f8f3ea] px-3 py-2 mb-6">
+              <div className="h-10 w-10 overflow-hidden rounded-xl ring-1 ring-[#0a2920]/15">
+                <Image src={logoSrc} alt="Bite Brew" className="h-full w-full object-cover" priority />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#207659]">Bite Brew</p>
+                <p className="text-xs font-semibold text-[#0a2920]">Cafe Console</p>
+              </div>
             </div>
             <h1 className="text-5xl font-black text-[#0a2920] lowercase italic tracking-tighter">welcome back</h1>
             <p className="text-black/30 font-bold uppercase text-[11px] tracking-[0.3em] mt-3">
@@ -166,7 +174,10 @@ export default function LoginPage() {
                   <Loader2 className="animate-spin" size={18} />
                 ) : (
                   <>
-                    Initialize Session
+                    <span className="h-6 w-6 overflow-hidden rounded-md border border-white/20">
+                      <Image src={logoSrc} alt="Bite Brew" className="h-full w-full object-cover" />
+                    </span>
+                    Login To Dashboard
                     <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                   </>
                 )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Order } from "@/lib/types";
+import type { Order } from "@/lib/shared";
 import { Modal } from "@/components/shared/ui/Modal";
 import { Button } from "@/components/shared/ui/Button";
 import { Input } from "@/components/shared/ui/Input";
@@ -9,7 +9,7 @@ import { Select } from "@/components/shared/ui/Select";
 
 import { toast } from "sonner";
 import { dashboardApi } from "@/lib/api/dashboard";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/shared";
 
 type Props = {
   open: boolean;

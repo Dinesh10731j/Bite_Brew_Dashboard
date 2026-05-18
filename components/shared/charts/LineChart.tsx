@@ -11,16 +11,16 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import type { TrafficPoint } from "@/lib/types";
+import type { TrafficPoint } from "@/lib/shared";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
-export function LineChart({ data }: { data: TrafficPoint[] }) {
+export function LineChart({ data, heightClass = "h-64" }: { data: TrafficPoint[]; heightClass?: string }) {
   const labels = data.map((item) => item.label);
   const visitors = data.map((item) => item.visitors ?? 0);
 
   return (
-    <div className="h-64 w-full">
+    <div className={`${heightClass} w-full`}>
       <Line
         data={{
           labels,

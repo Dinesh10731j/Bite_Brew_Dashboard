@@ -1,4 +1,4 @@
-import type { Message } from "@/lib/types";
+import type { Message } from "@/lib/shared";
 import { DetailCard } from "@/components/dashboard-blocks/common";
 
 export function MessageCard({ data }: { data: Message }) {

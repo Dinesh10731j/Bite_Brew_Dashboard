@@ -1,7 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shared";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "danger";

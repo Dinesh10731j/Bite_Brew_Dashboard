@@ -1,4 +1,4 @@
-import type { JwtPayload, UserRole } from "@/lib/types";
+import type { JwtPayload, UserRole } from "@/lib/shared";
 
 export const TOKEN_COOKIE = "access_token" as const;
 export const DASHBOARD_ROLES: UserRole[] = ["admin", "manager", "staff"];

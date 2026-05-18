@@ -1,6 +1,6 @@
 "use client";
 
-import type { Message } from "@/lib/types";
+import type { Message } from "@/lib/shared";
 import { GenericTable } from "@/components/dashboard-blocks/common";
 import { Button } from "@/components/shared/ui/Button";
 

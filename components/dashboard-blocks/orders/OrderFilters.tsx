@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/shared/ui/Input";
 import { Select } from "@/components/shared/ui/Select";
-import type { Order } from "@/lib/types";
+import type { Order } from "@/lib/shared";
 
 type Props = {
   query: string;

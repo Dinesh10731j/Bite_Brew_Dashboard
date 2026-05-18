@@ -7,19 +7,10 @@ import { useNotificationsStore } from "@/store/notifications-context";
 import { Button } from "@/components/shared/ui/Button";
 import { Badge } from "@/components/shared/ui/Badge";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-
-type TopBarProps = {
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
-  onOpenMobileSidebar: () => void;
-};
-
-function getGreeting(date: Date) {
-  const hour = date.getHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 17) return "Good afternoon";
-  return "Good evening";
-}
+import type { TopBarProps } from "@/lib/shared";
+import { getGreeting } from "@/lib/shared";
+import Image from "next/image";
+import logoSrc from "@/app/assets/images/bite_brew_logo.jpeg";
 
 export function TopBar({ sidebarCollapsed, onToggleSidebar, onOpenMobileSidebar }: TopBarProps) {
   const notifications = useNotificationsStore();
@@ -62,8 +53,8 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar, onOpenMobileSidebar 
           </div>
           <div className="flex items-start gap-3">
             <div className="mt-0.5 h-10 w-10 shrink-0 rounded-2xl bg-brand/10 p-2 ring-1 ring-brand/15 dark:bg-white/5">
-              <img
-                src="/assets/images/bite_brew_logo.jpeg"
+              <Image
+                src={logoSrc}
                 alt="Cafe"
                 className="h-full w-full rounded-2xl object-cover"
               />
@@ -153,8 +144,8 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar, onOpenMobileSidebar 
 
           <div className="flex items-center gap-3 rounded-2xl bg-brand px-4 py-3 text-white">
             <div className="h-10 w-10 rounded-2xl bg-white/10 p-2">
-              <img
-                src="/assets/images/bite_brew_logo.jpeg"
+              <Image
+                src={logoSrc}
                 alt="Operations"
                 className="h-full w-full rounded-2xl object-cover"
               />

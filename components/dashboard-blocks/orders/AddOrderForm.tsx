@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { Order } from "@/lib/types";
+import type { Order } from "@/lib/shared";
 import { BlockCard } from "@/components/dashboard-blocks/common";
 import { Button } from "@/components/shared/ui/Button";
 import { Input } from "@/components/shared/ui/Input";

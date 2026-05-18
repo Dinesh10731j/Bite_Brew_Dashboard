@@ -11,7 +11,7 @@ import {
   Legend,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import type { TrafficPoint } from "@/lib/types";
+import type { TrafficPoint } from "@/lib/shared";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 

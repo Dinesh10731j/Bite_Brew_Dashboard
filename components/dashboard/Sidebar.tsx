@@ -11,7 +11,7 @@ import logoSrc from "@/app/assets/images/bite_brew_logo.jpeg";
 
 
 import { Button } from "@/components/shared/ui/Button";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shared";
 import { CollapsibleNav } from "./CollapsibleNav";
 import { dashboardApi } from "@/lib/api/dashboard";
 

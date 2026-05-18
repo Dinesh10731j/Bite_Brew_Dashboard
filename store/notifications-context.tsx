@@ -118,13 +118,11 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     },
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["notifications"] });
-      const previous = queryClient.getQueryData<{ notifications: NotificationItem[]; totalPages: number }>([
-        "notifications",
-        page,
-        limit,
-      ]);
-      queryClient.setQueryData<{ notifications: NotificationItem[]; totalPages: number }>(
-        ["notifications", page, limit],
+      const previous = queryClient.getQueriesData<{ notifications: NotificationItem[]; totalPages: number }>({
+        queryKey: ["notifications"],
+      });
+      queryClient.setQueriesData<{ notifications: NotificationItem[]; totalPages: number }>(
+        { queryKey: ["notifications"] },
         (current) =>
           current
             ? { ...current, notifications: current.notifications.map((item) => ({ ...item, isRead: true })) }
@@ -133,8 +131,10 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       return { previous };
     },
     onError: (_error, _id, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(["notifications", page, limit], context.previous);
+      if (context?.previous?.length) {
+        for (const [key, value] of context.previous) {
+          queryClient.setQueryData(key, value);
+        }
       }
       toast.error("Failed to mark all notifications as read");
     },

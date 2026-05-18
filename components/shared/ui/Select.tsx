@@ -1,7 +1,7 @@
 "use client";
 
 import type { SelectHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/shared";
 
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return (

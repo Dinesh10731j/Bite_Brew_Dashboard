@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ResourceNote } from "@/components/dashboard/ResourceNote";
 import { useOrders } from "@/hooks/useOrders";
 import { useRealtimeResourceRefresh } from "@/hooks/useRealtimeUpdates";
-import type { Order } from "@/lib/types";
+import type { Order } from "@/lib/shared";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { extractList } from "@/services/api/http";
 
@@ -57,6 +57,7 @@ export function OrdersApiWorkspace() {
       <OrdersTable
         data={filteredOrders}
         onStatusChange={orders.updateOrderStatus}
+        onDelete={orders.deleteOrder}
         onEdit={(order) => {
           setEditingOrder(order);
           setEditModalOpen(true);
@@ -74,4 +75,3 @@ export function OrdersApiWorkspace() {
     </div>
   );
 }
-

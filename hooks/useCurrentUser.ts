@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { canAccessDashboard } from "@/lib/auth";
-import type { CurrentUser } from "@/lib/types";
+import type { CurrentUser } from "@/lib/shared";
 
 export function useCurrentUser() {
   const query = useQuery({

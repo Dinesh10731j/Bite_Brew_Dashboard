@@ -1,4 +1,4 @@
-import axios, { AxiosError, type AxiosRequestConfig } from "axios";
+import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BITE_BREW_API_URL ?? "http://localhost:7000/api/v1/bite-brew";
 const PROTECTED_PROXY_PREFIX = "/dashboard/api/protected";
@@ -9,6 +9,7 @@ const PUBLIC_ENDPOINTS = [
   "/auth/logout",
   "/auth/forgot-password",
   "/auth/reset-password",
+  "/auth/refresh-token",
   "/newsletter/subscribe",
 ];
 
@@ -27,6 +28,25 @@ export const http = axios.create({
   withCredentials: true,
   timeout: 15000,
 });
+
+type RetryableRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+let refreshPromise: Promise<void> | null = null;
+
+async function refreshTokens(): Promise<void> {
+  if (!refreshPromise) {
+    refreshPromise = http
+      .post("/auth/refresh-token", {}, { withCredentials: true })
+      .then(() => undefined)
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+
+  return refreshPromise;
+}
 
 http.interceptors.request.use((config) => {
   const rawUrl = config.url ?? "";
@@ -57,18 +77,32 @@ http.interceptors.request.use((config) => {
 
 http.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<any>) => {
+  async (error: AxiosError<any>) => {
+    const originalRequest = error.config as RetryableRequestConfig | undefined;
     const status = error.response?.status;
     const message =
       error.response?.data?.message ??
       error.response?.data?.error?.message ??
       error.message ??
       "Request failed";
+    const requestUrl = originalRequest?.url ?? "";
+    const isRefreshRequest = requestUrl.includes("/auth/refresh-token");
+    const isAuthError = status === 401 || status === 403;
+
+    if (typeof window !== "undefined" && isAuthError && originalRequest && !originalRequest._retry && !isRefreshRequest) {
+      originalRequest._retry = true;
+      try {
+        await refreshTokens();
+        return http.request(originalRequest);
+      } catch {
+        // fall through to auth-error dispatch below
+      }
+    }
 
     if (
       typeof window !== "undefined" &&
       !window.location.pathname.startsWith("/login") &&
-      (status === 401 || status === 403)
+      isAuthError
     ) {
       window.dispatchEvent(new CustomEvent("bite-brew:auth-error", { detail: { status } }));
     }

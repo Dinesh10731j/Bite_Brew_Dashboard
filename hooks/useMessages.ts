@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useBackendResource } from "@/hooks/useBackendResource";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { findArrayData, normalizeMessage } from "@/lib/dashboard-normalizers";
-import type { Message } from "@/lib/types";
+import type { Message } from "@/lib/shared";
 
 export function useMessages() {
   const [query, setQuery] = useState("");

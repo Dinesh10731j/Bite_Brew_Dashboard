@@ -1,4 +1,4 @@
-import type { Message, Order, TrafficPoint } from "@/lib/types";
+import type { Message, Order, TrafficPoint } from "@/lib/shared";
 
 export type AnalyticsSummaryView = {
   days: number;

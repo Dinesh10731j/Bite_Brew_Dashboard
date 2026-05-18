@@ -1,6 +1,8 @@
 import { Badge } from "@/components/shared/ui/Badge";
 import { Empty } from "@/components/shared/ui/Empty";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber } from "@/lib/shared";
+import Image from "next/image";
+import fallbackItemImage from "@/app/assets/images/bite_brew_logo.jpeg";
 
 type TopItem = {
   id?: string;
@@ -50,11 +52,14 @@ export function TopSellingItems({ items = [] }: { items?: TopItem[] }) {
             <div className="flex items-center gap-3">
               <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-brand-soft/80 ring-1 ring-brand/15 dark:bg-brand/20">
                 {imageSrc ? (
-                  <img src={imageSrc} alt={name} className="h-full w-full object-cover" />
+                  <Image src={imageSrc} alt={name} fill className="object-cover" unoptimized />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-sm font-bold text-brand-ink dark:text-white">
-                    {getInitials(name)}
-                  </div>
+                  <>
+                    <Image src={fallbackItemImage} alt={name} fill className="object-cover opacity-75" />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-sm font-bold text-white">
+                      {getInitials(name)}
+                    </div>
+                  </>
                 )}
               </div>
 

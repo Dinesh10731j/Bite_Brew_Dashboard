@@ -1,6 +1,7 @@
-import type { Notification } from "@/lib/types";
+import type { Notification } from "@/lib/shared";
 import { Badge } from "@/components/shared/ui/Badge";
 import { Empty } from "@/components/shared/ui/Empty";
+import { Bell, MailWarning, ShoppingBag } from "lucide-react";
 
 export function NotificationsWidget({ items = [] }: { items?: Notification[] }) {
   if (!items.length) {
@@ -15,7 +16,14 @@ export function NotificationsWidget({ items = [] }: { items?: Notification[] }) 
           className="rounded-2xl border border-brand/15 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-white/[0.03]"
         >
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-300">
+            <p className="flex items-center gap-1 text-xs font-semibold tracking-wide text-slate-500 dark:text-slate-300">
+              {notification.type === "order" ? (
+                <ShoppingBag className="h-3.5 w-3.5 text-brand" />
+              ) : notification.type === "message" ? (
+                <MailWarning className="h-3.5 w-3.5 text-brand" />
+              ) : (
+                <Bell className="h-3.5 w-3.5 text-brand" />
+              )}
               {notification.type.toUpperCase()}
             </p>
             <div className="flex items-center gap-2">

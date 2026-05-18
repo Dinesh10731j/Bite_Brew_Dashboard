@@ -95,6 +95,7 @@ export const dashboardApi = {
     apiService.orders.list(normalizeQuery(tokenOrParams, params)),
   createOrder: (body: Record<string, unknown>) => apiService.orders.create(body),
   getOrderById: (id: string) => apiService.orders.detail(id),
+  deleteOrder: (id: string) => apiService.orders.remove(id),
   updateOrderStatus: (id: string, tokenOrStatus: string | OrderStatus, maybeStatus?: OrderStatus) =>
     apiService.orders.updateStatus(id, (maybeStatus ?? tokenOrStatus) as string),
 
