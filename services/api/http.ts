@@ -1,7 +1,16 @@
 import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from "axios";
+import {
+  cacheAccessToken,
+  cacheRefreshToken,
+  clearAccessToken,
+  extractAccessToken,
+  extractRefreshToken,
+  getAccessToken,
+} from "@/lib/auth";
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_BITE_BREW_API_URL ?? "http://localhost:7000/api/v1/bite-brew";
 const PROTECTED_PROXY_PREFIX = "/dashboard/api/protected";
+const AUTH_PROXY_PREFIX = "/dashboard/api/auth";
 const PUBLIC_ENDPOINTS = [
   "/health",
   "/auth/signup",
@@ -62,9 +71,20 @@ http.interceptors.request.use((config) => {
     (path === "/newsletter/subscribe" && method === "POST");
   const isAuthOrPublic = PUBLIC_ENDPOINTS.includes(path) || isPublicGet || isPublicMutation;
 
-  if (isBrowser && !isAuthOrPublic && path.startsWith("/")) {
+  if (isBrowser && path.startsWith("/auth/")) {
+    config.baseURL = "";
+    config.url = `${AUTH_PROXY_PREFIX}${path.slice("/auth".length)}`;
+  } else if (isBrowser && !isAuthOrPublic && path.startsWith("/")) {
     config.baseURL = "";
     config.url = `${PROTECTED_PROXY_PREFIX}${path}`;
+  }
+
+  if (isBrowser) {
+    const token = getAccessToken();
+    if (token && !path.startsWith("/auth/signin") && !path.startsWith("/auth/signup")) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
 
   if (config.data instanceof FormData) {
@@ -76,7 +96,17 @@ http.interceptors.request.use((config) => {
 });
 
 http.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (typeof window !== "undefined") {
+      const accessToken = extractAccessToken(response.data);
+      const refreshToken = extractRefreshToken(response.data);
+
+      if (accessToken) cacheAccessToken(accessToken);
+      if (refreshToken) cacheRefreshToken(refreshToken);
+    }
+
+    return response;
+  },
   async (error: AxiosError<any>) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
     const status = error.response?.status;
@@ -104,6 +134,7 @@ http.interceptors.response.use(
       !window.location.pathname.startsWith("/login") &&
       isAuthError
     ) {
+      clearAccessToken();
       window.dispatchEvent(new CustomEvent("bite-brew:auth-error", { detail: { status } }));
     }
 

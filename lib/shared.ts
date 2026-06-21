@@ -12,13 +12,22 @@ export interface loginResponse {
   message: string;
   isCached?: boolean;
   accessToken?: string;
+  access_token?: string;
+  refreshToken?: string;
+  refresh_token?: string;
   token?: string;
   data?: {
     accessToken?: string;
+    access_token?: string;
+    refreshToken?: string;
+    refresh_token?: string;
     token?: string;
     user?: User;
     tokens?: {
       accessToken?: string;
+      access_token?: string;
+      refreshToken?: string;
+      refresh_token?: string;
     };
   };
   user: {

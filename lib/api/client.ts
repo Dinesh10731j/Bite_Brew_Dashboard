@@ -1,4 +1,15 @@
 import axiosInstance from "./axios";
+import { clearAccessToken, getAccessToken } from "@/lib/auth";
+
+axiosInstance.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
 
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -9,6 +20,7 @@ axiosInstance.interceptors.response.use(
       !window.location.pathname.startsWith("/login") &&
       (status === 401 || status === 403)
     ) {
+      clearAccessToken();
       window.dispatchEvent(new CustomEvent("bite-brew:auth-error", { detail: { status } }));
     }
     return Promise.reject(error?.response?.data || { message: error.message });

@@ -12,6 +12,7 @@ import logoSrc from "@/app/assets/images/bite_brew_logo.jpeg";
 
 import { Button } from "@/components/shared/ui/Button";
 import { cn } from "@/lib/shared";
+import { clearAccessToken } from "@/lib/auth";
 import { CollapsibleNav } from "./CollapsibleNav";
 import { dashboardApi } from "@/lib/api/dashboard";
 
@@ -34,6 +35,7 @@ export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }
       toast.error(error instanceof Error ? error.message : "Logout failed");
       queryClient.clear();
     } finally {
+      clearAccessToken();
       onCloseMobile?.();
       router.replace("/login");
       router.refresh();

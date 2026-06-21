@@ -7,12 +7,14 @@ import { ThemeProvider } from "@/components/dashboard/ThemeProvider";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { NotificationsProvider } from "@/store/notifications-context";
 import { useRealtimeUpdates } from "@/hooks/useRealtimeUpdates";
+import { clearAccessToken } from "@/lib/auth";
 
 function AuthRedirectHandler({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
     const onAuthError = () => {
+      clearAccessToken();
       router.replace("/login?reason=unauthorized");
     };
 

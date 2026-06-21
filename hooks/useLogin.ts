@@ -2,8 +2,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import type { loginFormValues, loginResponse } from "@/lib/shared";
-import { canAccessDashboard } from "@/lib/auth";
+import type { CurrentUser, User, loginFormValues, loginResponse } from "@/lib/shared";
+import { cacheAccessToken, canAccessDashboard, clearAccessToken, decodeJwt, extractAccessToken } from "@/lib/auth";
 import { toast } from "sonner";
 import { dashboardApi } from "@/lib/api/dashboard";
 
@@ -19,18 +19,29 @@ export const UseUserLogin = () => {
     mutationKey: ["login"],
     mutationFn: loginApi,
     onSuccess: (data) => {
-      const role = data?.user?.role ?? data?.data?.user?.role ?? null;
+      const token = extractAccessToken(data);
+      if (token) cacheAccessToken(token);
 
-      queryClient.invalidateQueries({ queryKey: ["currentUser"] });
+      const user = data?.user ?? data?.data?.user ?? null;
+      const role = user?.role ?? (token ? decodeJwt(token)?.role : null) ?? null;
 
       if (role && !canAccessDashboard(role)) {
+        clearAccessToken();
         toast.error("Forbidden: your role cannot access the dashboard.");
         router.replace("/login?reason=forbidden");
         return;
       }
 
+      if (user) {
+        queryClient.setQueryData<CurrentUser>(["currentUser"], {
+          message: data.message ?? "Authenticated",
+          data: user as User,
+        });
+      }
+
       toast.success("Login successful.");
       router.replace("/dashboard");
+      void queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
     onError: (error) => {
       toast.error(error.message || "Login failed");
