@@ -13,6 +13,7 @@ import { useAnalytics } from "@/hooks/useAnalytics";
 import { useBackendResource } from "@/hooks/useBackendResource";
 import { dashboardApi } from "@/lib/api/dashboard";
 import { formatNumber, formatPercent } from "@/lib/shared";
+import { Activity, ArrowUpRight, ChartNoAxesColumn, DollarSign, MessageSquareText, ShoppingCart, Target } from "lucide-react";
 
 export function AnalyticsApiWorkspace() {
   const analytics = useAnalytics(7);
@@ -59,35 +60,64 @@ export function AnalyticsApiWorkspace() {
     <div className="space-y-6 pb-24 xl:pb-6">
       <ResourceNote error={analytics.error} loading={analytics.loading} fallbackLabel="analytics" />
 
+      <section className="relative overflow-hidden rounded-3xl border border-brand/20 bg-gradient-to-br from-brand-soft via-white to-[#f3f9f6] p-6 shadow-sm dark:from-[#0f1714] dark:via-[#101b17] dark:to-[#14221c]">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-brand/10 blur-2xl dark:bg-brand/20" />
+        <div className="pointer-events-none absolute -bottom-16 left-0 h-44 w-44 rounded-full bg-brand-deep/10 blur-2xl dark:bg-brand-deep/20" />
+        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand">Analytics Command Center</p>
+            <h1 className="mt-2 text-2xl font-semibold text-brand-ink dark:text-white sm:text-3xl">Performance Intelligence</h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
+              Real-time metrics with trend context to quickly identify growth, conversion changes, and sales momentum.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-2 self-start rounded-full border border-brand/20 bg-white/70 px-4 py-2 text-sm font-medium text-brand-ink shadow-sm backdrop-blur dark:bg-white/10 dark:text-white">
+            <Activity className="h-4 w-4 text-brand" />
+            Live signal tracking
+          </div>
+        </div>
+      </section>
+
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-12">
-        <BlockCard title="Visits" description="Total tracked traffic" className="xl:col-span-3">
+        <BlockCard title="Visits" icon={<ChartNoAxesColumn className="h-5 w-5" />} description="Total tracked traffic" className="xl:col-span-3">
           <p className="text-3xl font-semibold text-brand-ink dark:text-white">{formatNumber(analytics.data.totalVisits)}</p>
-          <div className="mt-3">
+          <div className="mt-3 flex items-center gap-2">
             <Badge tone={visitDeltaPercent >= 0 ? "success" : "danger"}>
               {visitDeltaPercent >= 0 ? "+" : ""}
               {formatPercent(Math.abs(visitDeltaPercent) * 100)} vs previous point
             </Badge>
+            <ArrowUpRight className={`h-4 w-4 ${visitDeltaPercent >= 0 ? "text-emerald-600" : "rotate-90 text-rose-500"}`} />
           </div>
         </BlockCard>
-        <BlockCard title="Revenue" description="Gross sales captured" className="xl:col-span-3">
+        <BlockCard title="Revenue" icon={<DollarSign className="h-5 w-5" />} description="Gross sales captured" className="xl:col-span-3">
           <p className="text-3xl font-semibold text-brand-ink dark:text-white">NPR {formatNumber(analytics.data.revenue)}</p>
           <div className="mt-3">
             <Badge tone="brand">Live backend value</Badge>
           </div>
         </BlockCard>
-        <BlockCard title="Orders" description="Total completed/active records" className="xl:col-span-2">
+        <BlockCard
+          title="Orders"
+          icon={<ShoppingCart className="h-5 w-5" />}
+          description="Total completed/active records"
+          className="xl:col-span-2"
+        >
           <p className="text-3xl font-semibold text-brand-ink dark:text-white">{formatNumber(analytics.data.totalOrders)}</p>
           <div className="mt-3">
             <Badge tone="neutral">{hasOrdersData ? "Daily points available" : "Sparse daily points"}</Badge>
           </div>
         </BlockCard>
-        <BlockCard title="Conversion" description="Visit to order conversion" className="xl:col-span-2">
+        <BlockCard title="Conversion" icon={<Target className="h-5 w-5" />} description="Visit to order conversion" className="xl:col-span-2">
           <p className="text-3xl font-semibold text-brand-ink dark:text-white">{analytics.data.conversionRate.toFixed(2)}%</p>
           <div className="mt-3">
             <Badge tone={conversionTone}>{conversionTone === "danger" ? "Needs attention" : "Healthy"}</Badge>
           </div>
         </BlockCard>
-        <BlockCard title="Messages" description="Inbound customer messages" className="xl:col-span-2">
+        <BlockCard
+          title="Messages"
+          icon={<MessageSquareText className="h-5 w-5" />}
+          description="Inbound customer messages"
+          className="xl:col-span-2"
+        >
           <p className="text-3xl font-semibold text-brand-ink dark:text-white">{formatNumber(analytics.data.totalMessages)}</p>
           <div className="mt-3">
             <Badge tone={analytics.data.totalMessages > 0 ? "brand" : "neutral"}>
@@ -98,14 +128,19 @@ export function AnalyticsApiWorkspace() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-12">
-        <BlockCard title="Sales Overview" description="Visitors trend with matched order/revenue points." className="xl:col-span-8">
+        <BlockCard
+          title="Sales Overview"
+          icon={<ChartNoAxesColumn className="h-5 w-5" />}
+          description="Visitors trend with matched order/revenue points."
+          className="xl:col-span-8"
+        >
           {salesOverview.length ? (
             <LineChart data={salesOverview} />
           ) : (
             <Empty title="No Sales Overview" description="Backend did not return sales overview points." />
           )}
         </BlockCard>
-        <BlockCard title="Performance Snapshot" description="Current period context." className="xl:col-span-4">
+        <BlockCard title="Performance Snapshot" icon={<Activity className="h-5 w-5" />} description="Current period context." className="xl:col-span-4">
           <div className="space-y-4">
             <div className="rounded-2xl bg-brand-soft/60 p-4 dark:bg-white/5">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">Latest Visits</p>
@@ -129,7 +164,11 @@ export function AnalyticsApiWorkspace() {
         </BlockCard>
       </div>
 
-      <BlockCard title="Top Items Mix" description="How many times each item was ordered (e.g., Mojito, Other).">
+      <BlockCard
+        title="Top Items Mix"
+        icon={<ShoppingCart className="h-5 w-5" />}
+        description="How many times each item was ordered (e.g., Mojito, Other)."
+      >
         {topItemMixData.length ? (
           <PieChart data={topItemMixData} />
         ) : (
@@ -138,7 +177,7 @@ export function AnalyticsApiWorkspace() {
       </BlockCard>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <BlockCard title="Orders Per Day" description="Order spikes and low-volume days.">
+        <BlockCard title="Orders Per Day" icon={<ShoppingCart className="h-5 w-5" />} description="Order spikes and low-volume days.">
           {ordersData.length ? (
             <BarChart data={ordersData} />
           ) : (
@@ -146,7 +185,7 @@ export function AnalyticsApiWorkspace() {
           )}
         </BlockCard>
 
-        <BlockCard title="Revenue Analytics" description="Revenue trend by day.">
+        <BlockCard title="Revenue Analytics" icon={<DollarSign className="h-5 w-5" />} description="Revenue trend by day.">
           {revenueData.length ? (
             <AreaChart data={revenueData} />
           ) : (

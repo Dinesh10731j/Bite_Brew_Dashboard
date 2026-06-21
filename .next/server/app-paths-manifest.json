@@ -1,9 +1,7 @@
 {
   "/dashboard/api/protected/[...path]/route": "app/dashboard/api/protected/[...path]/route.js",
-  "/login/page": "app/login/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/dashboard/(notifications)/notifications/page": "app/dashboard/(notifications)/notifications/page.js",
-  "/dashboard/(messages)/messages/page": "app/dashboard/(messages)/messages/page.js",
-  "/dashboard/(analytics)/analytics/page": "app/dashboard/(analytics)/analytics/page.js",
-  "/dashboard/(orders)/orders/page": "app/dashboard/(orders)/orders/page.js"
+  "/dashboard/(orders)/orders/page": "app/dashboard/(orders)/orders/page.js",
+  "/dashboard/(analytics)/analytics/page": "app/dashboard/(analytics)/analytics/page.js"
 }

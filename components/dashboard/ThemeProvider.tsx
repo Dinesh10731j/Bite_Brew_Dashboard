@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 type ThemeMode = "light" | "dark";
+const THEME_STORAGE_KEY = "bitebrew-theme-mode";
 
 type ThemeContextType = {
   mode: ThemeMode;
@@ -16,6 +17,11 @@ function getInitialTheme(): ThemeMode {
     return "light";
   }
 
+  const savedMode = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedMode === "light" || savedMode === "dark") {
+    return savedMode;
+  }
+
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
@@ -26,12 +32,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const initialMode = getInitialTheme();
     setMode(initialMode);
     document.documentElement.classList.toggle("dark", initialMode === "dark");
+    window.localStorage.setItem(THEME_STORAGE_KEY, initialMode);
   }, []);
 
   const toggleTheme = () => {
     const next = mode === "light" ? "dark" : "light";
     setMode(next);
     document.documentElement.classList.toggle("dark", next === "dark");
+    window.localStorage.setItem(THEME_STORAGE_KEY, next);
   };
 
   return <ThemeContext.Provider value={{ mode, toggleTheme }}>{children}</ThemeContext.Provider>;

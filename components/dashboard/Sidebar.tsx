@@ -52,12 +52,12 @@ export function Sidebar({ collapsed = false, mobileOpen = false, onCloseMobile }
       )}
       <aside
         className={cn(
-          "fixed inset-y-4 left-4 z-50 transition-transform xl:static xl:inset-auto xl:z-auto xl:block xl:translate-x-0",
+          "fixed inset-y-4 left-4 z-50 transition-transform xl:fixed xl:inset-y-6 xl:left-6 xl:z-40 xl:block xl:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-[120%] xl:translate-x-0",
           collapsed ? "w-[96px]" : "w-[280px]"
         )}
       >
-      <Card className="flex min-h-[calc(100vh-2rem)] flex-col bg-panel-grid bg-[size:100%_100%,22px_22px,22px_22px] xl:sticky xl:top-6 xl:min-h-[calc(100vh-3rem)]">
+      <Card className="flex min-h-[calc(100vh-2rem)] flex-col bg-panel-grid bg-[size:100%_100%,22px_22px,22px_22px] xl:min-h-[calc(100vh-3rem)]">
         <div className={cn("flex items-center", collapsed ? "justify-center" : "gap-3")}>
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand text-white">
             <Image

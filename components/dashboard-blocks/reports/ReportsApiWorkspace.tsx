@@ -57,6 +57,13 @@ const initialReport: SalesReportView = {
   topItems: [],
 };
 
+function normalizeItemName(value: unknown): string {
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
 function formatDate(isoString: string): string {
   if (!isoString) return "";
   try {
@@ -99,12 +106,32 @@ export function ReportsApiWorkspace() {
       
       // Extract top items (map quantity -> orders, sales -> revenue)
       const topItems = Array.isArray(data?.topItems)
-        ? data.topItems.map((item: any) => ({
-            name: item?.name ?? item?.menuItem?.name ?? "Item",
-            orders: Number(item?.quantity ?? item?.orders ?? 0),
-            sales: Number(item?.sales ?? 0),
-            revenue: item?.sales ? `NPR ${Number(item.sales).toLocaleString()}` : undefined,
-          }))
+        ? Array.from(
+            data.topItems.reduce(
+              (
+                acc: Map<string, { name?: string; orders?: number; sales?: number; revenue?: string }>,
+                item: any
+              ) => {
+                const rawName = item?.name ?? item?.menuItem?.name ?? "Item";
+                const key = normalizeItemName(rawName) || "item";
+                const existing = acc.get(key);
+                const nextOrders = Number(item?.quantity ?? item?.orders ?? 0);
+                const nextSales = Number(item?.sales ?? 0);
+                const mergedOrders = Number(existing?.orders ?? 0) + nextOrders;
+                const mergedSales = Number(existing?.sales ?? 0) + nextSales;
+                const normalizedName = String(rawName).trim() || "Item";
+
+                acc.set(key, {
+                  name: existing?.name ?? normalizedName,
+                  orders: mergedOrders,
+                  sales: mergedSales,
+                  revenue: mergedSales > 0 ? `NPR ${mergedSales.toLocaleString()}` : undefined,
+                });
+                return acc;
+              },
+              new Map()
+            ).values()
+          ).sort((a, b) => Number(b.sales ?? 0) - Number(a.sales ?? 0))
         : [];
       
       return {

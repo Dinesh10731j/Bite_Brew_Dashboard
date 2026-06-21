@@ -1,4 +1,4 @@
-// File: C:\bite-brew-dashboard\Dashboard\app\dashboard\api\protected\[...path]\route.ts
+// File: D:\bite-brew-dashboard\Dashboard\app\dashboard\api\protected\[...path]\route.ts
 import * as entry from '../../../../../../../app/dashboard/api/protected/[...path]/route.js'
 import type { NextRequest } from 'next/server.js'
 
