@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ImagePlus, LayoutGrid, Logs, Users } from "lucide-react";
+import { ImagePlus, IdCard, LayoutGrid, Logs, Users } from "lucide-react";
 import { BlockCard } from "@/components/dashboard-blocks/common";
+
 
 const links = [
   {
@@ -26,8 +27,15 @@ const links = [
     description: "Review login history, order assignments, and staff actions.",
     href: "/dashboard/management/activity-logs",
     icon: Logs
+  },
+  {
+    title: "Staff",
+    description: "Create, edit, delete staff and upload profile photos.",
+    href: "/dashboard/management/staff",
+    icon: IdCard
   }
 ];
+
 
 export function ManagementLinks() {
   return (

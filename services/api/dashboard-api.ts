@@ -46,7 +46,18 @@ export const apiService = {
       request({ url: `/users/${id}/role`, method: "PATCH", data: { role } }),
   },
 
+  staff: {
+    list: (params?: QueryParams) =>
+      request({ url: "/staff", method: "GET", params: cleanParams(params) }),
+    create: (body: Record<string, unknown>) =>
+      request({ url: "/staff", method: "POST", data: body }),
+    update: (id: string, body: Record<string, unknown>) =>
+      request({ url: `/staff/${id}`, method: "PATCH", data: body }),
+    remove: (id: string) => request({ url: `/staff/${id}`, method: "DELETE" }),
+  },
+
   menu: {
+
     categories: {
       list: (params?: QueryParams) =>
         request({ url: "/menu/categories", method: "GET", params: cleanParams(params) }),

@@ -49,8 +49,14 @@ export const dashboardApi = {
     return apiService.users.updateRole(id, allowedRole);
   },
 
+  getStaff: (tokenOrParams?: string | QueryParams, params?: QueryParams) =>
+    apiService.staff.list(normalizeQuery(tokenOrParams, params)),
+  createStaff: (body: Record<string, unknown>) => apiService.staff.create(body),
+  updateStaff: (id: string, body: Record<string, unknown>) => apiService.staff.update(id, body),
+  deleteStaff: (id: string) => apiService.staff.remove(id),
 
   getMenuCategories: (params?: QueryParams) => apiService.menu.categories.list(params),
+
   createMenuCategory: (tokenOrBody: string | { name: string; description?: string; isActive?: boolean }, maybeBody?: { name: string; description?: string; isActive?: boolean }) =>
     apiService.menu.categories.create(typeof tokenOrBody === "string" ? (maybeBody ?? { name: "" }) : tokenOrBody),
   updateMenuCategory: (
